@@ -9,9 +9,16 @@
 
 	<name>gemtools</name>
 
+	<scm>
+		<connection>scm:git:file://localhost/Users/wmay/Pivotal/ADP/</connection>
+  	  <tag>HEAD</tag>
+  </scm>
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+
+
 
 	<build>
 		<plugins>
