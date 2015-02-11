@@ -3,14 +3,14 @@
 
 	<groupId>io.pivotal.gemfire_addon</groupId>
 	<artifactId>gemtools</artifactId>
-	<version>0.2</version>
+	<version>0.3-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>gemtools</name>
 
 	<scm>
 		<connection>scm:git:file://localhost/Users/wmay/Pivotal/ADP/gemtools</connection>
-  	  <tag>gemtools-0.2</tag>
+  	  <tag>HEAD</tag>
   </scm>
 
 	<properties>
