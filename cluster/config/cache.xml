@@ -14,4 +14,10 @@
 	<region name="RTest">
 		<region-attributes refid="REPLICATE" gateway-sender-ids="ToRemote"/>
 	</region>
+	<region name="TestP">
+		<region-attributes refid="PARTITION_REDUNDANT_PERSISTENT" gateway-sender-ids="ToRemote"/>
+	</region>
+	<region name="RTestP">
+		<region-attributes refid="REPLICATE_PERSISTENT" gateway-sender-ids="ToRemote"/>
+	</region>
 </cache>

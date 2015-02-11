@@ -1,0 +1,25 @@
+connect --locator=localhost[10000]
+
+put --key=1 --value=1 --region=/Test 
+put --key=2 --value=2 --region=/Test 
+put --key=3 --value=3 --region=/Test 
+put --key=4 --value=4 --region=/Test 
+put --key=5 --value=5 --region=/Test 
+
+put --key=1 --value=1 --region=/RTest 
+put --key=2 --value=2 --region=/RTest 
+put --key=3 --value=3 --region=/RTest 
+put --key=4 --value=4 --region=/RTest 
+put --key=5 --value=5 --region=/RTest 
+
+put --key=1 --value=1 --region=/TestP
+put --key=2 --value=2 --region=/TestP 
+put --key=3 --value=3 --region=/TestP 
+put --key=4 --value=4 --region=/TestP 
+put --key=5 --value=5 --region=/TestP 
+
+put --key=1 --value=1 --region=/RTestP 
+put --key=2 --value=2 --region=/RTestP 
+put --key=3 --value=3 --region=/RTestP 
+put --key=4 --value=4 --region=/RTestP 
+put --key=5 --value=5 --region=/RTestP 

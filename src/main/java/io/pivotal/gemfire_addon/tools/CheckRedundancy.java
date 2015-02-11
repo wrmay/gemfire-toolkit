@@ -2,7 +2,9 @@ package io.pivotal.gemfire_addon.tools;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,36 +16,39 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
 import com.gemstone.gemfire.cache.Region;
-import com.gemstone.gemfire.cache.client.ClientCache;
 import com.gemstone.gemfire.cache.client.ClientCacheFactory;
 import com.gemstone.gemfire.cache.client.ClientRegionShortcut;
-import com.gemstone.gemfire.cache.execute.Execution;
-import com.gemstone.gemfire.cache.execute.FunctionService;
-import com.gemstone.gemfire.cache.execute.ResultCollector;
+import com.gemstone.gemfire.management.DistributedRegionMXBean;
 import com.gemstone.gemfire.management.DistributedSystemMXBean;
 
-public class GemTouch {
+public class CheckRedundancy {
 	public static String NAME = "Touch";
 	
 	private static String jmxManagerHost = null;
 	private static int jmxManagerPort = 0;
-	private static int ratePerSecond = 0;
 	private static String userName = null;
 	private static String password = null;
+	private static boolean verbose = false;
+	private static int wait = 0;
 	
 	private static String JMX_MANAGER_HOST_PREFIX="--jmx-manager-host=";
 	private static String JMX_MANAGER_PORT_PREFIX="--jmx-manager-port=";
 	private static String JMX_USERNAME_PREFIX="--jmx-username=";
 	private static String JMX_PASSWORD_PREFIX="--jmx-password=";
-	private static String RATE_PER_SECOND_PREFIX="--rate-per-second=";
+	private static String WAIT_PREFIX="--wait=";
+	private static String VERBOSE_FLAG="--verbose";
+
+	private static HashMap<ObjectName, DistributedRegionMXBean> regionBeans;
 	
 	
 	public static void main(String []args){
 		int rc = 1;
 		JMXConnector jmxc = null;
 		try {
-			parseArgs(args);
+			regionBeans = new HashMap<ObjectName, DistributedRegionMXBean>(200);
 			
+			parseArgs(args);
+						
 			JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + jmxManagerHost + ":" + jmxManagerPort + "/jmxrmi");
 			HashMap<String, Serializable> env = null;
 			if (userName != null){
@@ -52,24 +57,32 @@ public class GemTouch {
 			}
 			jmxc = JMXConnectorFactory.connect(url, env);	
 			MBeanServerConnection mbsc= jmxc.getMBeanServerConnection();
-			ObjectName oname = new ObjectName("GemFire:service=System,type=Distributed");
-			DistributedSystemMXBean distributedSystemBean  = JMX.newMXBeanProxy(mbsc, oname, DistributedSystemMXBean.class);
-			initCache(distributedSystemBean);	
-			
-			String []regionNames = distributedSystemBean.listAllRegionPaths();
+			ObjectName dsOname = new ObjectName("GemFire:service=System,type=Distributed");
+			DistributedSystemMXBean distributedSystemBean  = JMX.newMXBeanProxy(mbsc, dsOname, DistributedSystemMXBean.class);
+	
+			int atRiskRegions = 0;
+			long start = System.currentTimeMillis();
+			long elapsed = 0;
 
-			for(String regionName: regionNames){
-				Region<Object,Object> r = getRegion(regionName);
+			while( wait == 0 || elapsed < (1000 * wait)){
+				updateRegionMap(distributedSystemBean, mbsc);
+
+				atRiskRegions = checkAllRegions();
+				if (atRiskRegions == 0) break; //BREAK
+				if (wait == 0) break; //BREAK
 				
-				TouchAllArgs touchAllArgs = new TouchAllArgs();
-				touchAllArgs.setRatePerSecond(ratePerSecond);
-				Execution exec = FunctionService.onRegion(r).withArgs(touchAllArgs).withCollector(new LoggingResultCollector());
-				ResultCollector<String,String> results = (ResultCollector<String,String>) exec.execute(GemTouch.NAME);
-				results.getResult();
-				System.out.println("finished touch for " + r.getFullPath());
+				try {
+					Thread.sleep(2000);
+				} catch(InterruptedException x){
+					// not a problem
+				}
+				elapsed = System.currentTimeMillis() - start;
 			}
 			
-			rc = 0;
+			if (atRiskRegions == 0){
+				System.out.println("all partitioned regions have redundancy");
+				rc = 0;
+			} 			
 			
 		} catch(Exception x){
 			x.printStackTrace(System.err);
@@ -77,27 +90,64 @@ public class GemTouch {
 			if (jmxc != null) {
 				try {
 					jmxc.close();
-					System.out.println("closed JMX connection");
 				} catch(IOException iox){
 					System.err.println("warning: error closing jmx connection");
 				}
-			}
-			
-			ClientCache cache = ClientCacheFactory.getAnyInstance();
-			if (cache != null) cache.close();
+			}			
 		}
 		
 		System.exit(rc);
 	}
-	
-	private static void initCache(DistributedSystemMXBean dsBean){
-		String locatorString = dsBean.listLocators()[0];
-		ClientCacheFactory factory = new ClientCacheFactory();
-		setupPools(factory, locatorString);
-		factory.create();
-		System.out.println("connected to distributed system  with locator " + dsBean.listLocators()[0]);
+
+	private static int checkAllRegions(){
+		ObjectName []objects = new ObjectName[regionBeans.size()]; 
+		regionBeans.keySet().toArray(objects);
+		int atRiskRegions = 0;
+		
+		Arrays.sort(objects, new ObjectNameComparator());
+		for( ObjectName oname: objects){
+			DistributedRegionMXBean regionMBean = regionBeans.get(oname);
+			String type = regionMBean.getRegionType();
+			if (type.contains("PARTITION")){
+				int count = regionMBean.getNumBucketsWithoutRedundancy();
+				if (count > 0 || verbose ){
+					if (count > 0) ++atRiskRegions;
+					System.out.println(oname.toString() + " " + regionMBean.getFullPath() + " : " + count  + " buckets without redundancy");
+				} 
+			} else {
+				if (verbose) {
+					System.out.println(oname.toString() + " " + regionMBean.getFullPath() + " : NA (not partitioned)");
+				}
+			}
+		}
+		
+		return atRiskRegions;
 	}
 	
+	private static void updateRegionMap(DistributedSystemMXBean distributedSystemBean,MBeanServerConnection mbsc ){
+		ObjectName []objects = distributedSystemBean.listDistributedRegionObjectNames();
+		
+		// remove any regions that no longer exist
+		Set<ObjectName> keys = regionBeans.keySet();
+		for(ObjectName key : keys){
+			boolean found = false;
+			for(ObjectName existingObject : objects){
+				if (key.equals(existingObject)){
+					found = true;
+					break;
+				}
+			}
+			if (!found) regionBeans.remove(key);
+		}
+		
+		// add any new
+		for(ObjectName existingObject : objects){
+			if (! regionBeans.containsKey(existingObject)){
+				DistributedRegionMXBean regionMBean = JMX.newMXBeanProxy(mbsc, existingObject, DistributedRegionMXBean.class);
+				regionBeans.put(existingObject, regionMBean);
+			}
+		}
+	}
 	
 	// this will need to be enhanced to support server groups
 	private static void setupPools(ClientCacheFactory ccf, String locator){
@@ -168,12 +218,14 @@ public class GemTouch {
 				userName = arg.substring(JMX_USERNAME_PREFIX.length());
 			} else if (arg.startsWith(JMX_PASSWORD_PREFIX)){
 				password = arg.substring(JMX_PASSWORD_PREFIX.length());
-			} else if (arg.startsWith(RATE_PER_SECOND_PREFIX)){
-				String s = arg.substring(RATE_PER_SECOND_PREFIX.length());
+			} else if (arg.equals(VERBOSE_FLAG)){
+				verbose = true;
+			} else if (arg.startsWith(WAIT_PREFIX)){
+				String s = arg.substring(WAIT_PREFIX.length());
 				try {
-					ratePerSecond = Integer.parseInt(s);
+					wait = Integer.parseInt(s);
 				} catch(NumberFormatException x){
-					System.err.println("--rate-per-second must be an integer: " + s);
+					System.err.println("--wait value must be an integer: " + s);
 					System.exit(1);
 				}
 			} else {
@@ -199,17 +251,20 @@ public class GemTouch {
 			}
 		}
 		
-		if (ratePerSecond < 0){
-			System.err.println("rate per second must be greater than equal 0 if provided");
-			System.exit(1);
-		}
 	}
 	
 	private static void printUsage(){
-		System.err.println("usage: gemtouch --jmx-manager-host=abc --jmx-manager-port=123 --jmx-username=fred --jmx-password=pass --rate-per-thread=100");
+		System.err.println("usage: checkredundancy --jmx-manager-host=abc --jmx-manager-port=123 --jmx-username=fred --jmx-password=pass ");
 		System.err.println("\t--jmx-manager-host and --jmx-manager-port must point to a GemFire jmx manager (usually the locator)");
 		System.err.println("\t\tif you are not sure of the port number try 1099");		
 		System.err.println("\t--jmxusername and --jmx-manager-password are optional but if either is present the other must also be provided");
-		System.err.println("\t--rate-per-second is optional - acts a a throttle if present");
+		System.err.println();
+		System.err.println("\tcheckredundancy will return with a 0 exit code if all partition regions have redundancy");
+		System.err.println("\tcheckredundancy will return with a 1 exit code if any partition regions do not have redundancy");
+		System.err.println();		
+		System.err.println("\tBy default, checkredundancy will report only partition regions that do not have redundancy");
+		System.err.println("\t--verbose will cause checkredundancy to report redundancy of all regions");
+		System.err.println("\t--wait=20 will cause checkredundancy to wait up to 20s for redundancy to be established");
 	}
- }
+ 
+}
