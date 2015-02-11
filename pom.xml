@@ -9,7 +9,7 @@
 	<name>gemtools</name>
 
 	<scm>
-		<connection>scm:git:file://localhost/Users/wmay/Pivotal/ADP/gemtools</connection>
+	  <connection>${gemtools.scm.url}</connection>
   	  <tag>HEAD</tag>
   </scm>
 
