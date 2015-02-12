@@ -2,6 +2,8 @@ package io.pivotal.gemfire_addon.tools;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,13 +32,19 @@ public class GemTouch {
 	private static int ratePerSecond = 0;
 	private static String userName = null;
 	private static String password = null;
+	private static int regionCreationDelay = 20;
 	
 	private static String JMX_MANAGER_HOST_PREFIX="--jmx-manager-host=";
 	private static String JMX_MANAGER_PORT_PREFIX="--jmx-manager-port=";
 	private static String JMX_USERNAME_PREFIX="--jmx-username=";
 	private static String JMX_PASSWORD_PREFIX="--jmx-password=";
 	private static String RATE_PER_SECOND_PREFIX="--rate-per-second=";
+	private static String METADATA_REGION_NAME_PREFIX="--metadata-region-name=";
+	private static String REGION_CREATION_DELAY_PREFIX="--region-creation-delay=";
 	
+	private static String METADATA_REGION="/__regionAttributesMetadata";
+	
+	//TODO: 
 	
 	public static void main(String []args){
 		int rc = 1;
@@ -57,16 +65,29 @@ public class GemTouch {
 			initCache(distributedSystemBean);	
 			
 			String []regionNames = distributedSystemBean.listAllRegionPaths();
+			ArrayList<String> regionNameList = new ArrayList<String>(regionNames.length);
+			for (String regionName : regionNames){
+				if (regionName.equals(METADATA_REGION)){
+					touchRegion(METADATA_REGION);
+					
+					if (regionCreationDelay > 0){
+						System.out.println("waiting " + regionCreationDelay + " seconds for region creation");
+						try{
+							Thread.sleep(1000 * regionCreationDelay);
+						} catch(InterruptedException x){
+							// just continue
+						}
+					}
+				} else {
+					regionNameList.add(regionName);
+				}
+			}
 
-			for(String regionName: regionNames){
-				Region<Object,Object> r = getRegion(regionName);
+			
+			Collections.sort(regionNameList);
 				
-				TouchAllArgs touchAllArgs = new TouchAllArgs();
-				touchAllArgs.setRatePerSecond(ratePerSecond);
-				Execution exec = FunctionService.onRegion(r).withArgs(touchAllArgs).withCollector(new LoggingResultCollector());
-				ResultCollector<String,String> results = (ResultCollector<String,String>) exec.execute(GemTouch.NAME);
-				results.getResult();
-				System.out.println("finished touch for " + r.getFullPath());
+			for(String regionName: regionNameList){
+				touchRegion(regionName);
 			}
 			
 			rc = 0;
@@ -88,6 +109,17 @@ public class GemTouch {
 		}
 		
 		System.exit(rc);
+	}
+	
+	private static void touchRegion(String regionName){
+		Region<Object,Object> r = getRegion(regionName);
+		
+		TouchAllArgs touchAllArgs = new TouchAllArgs();
+		touchAllArgs.setRatePerSecond(ratePerSecond);
+		Execution exec = FunctionService.onRegion(r).withArgs(touchAllArgs).withCollector(new LoggingResultCollector());
+		ResultCollector<String,String> results = (ResultCollector<String,String>) exec.execute(GemTouch.NAME);
+		results.getResult();
+		System.out.println("finished touch for " + r.getFullPath());	
 	}
 	
 	private static void initCache(DistributedSystemMXBean dsBean){
@@ -176,6 +208,20 @@ public class GemTouch {
 					System.err.println("--rate-per-second must be an integer: " + s);
 					System.exit(1);
 				}
+			} else if (arg.startsWith(REGION_CREATION_DELAY_PREFIX)){
+				String s = arg.substring(REGION_CREATION_DELAY_PREFIX.length());
+				try {
+					regionCreationDelay = Integer.parseInt(s);
+				} catch(NumberFormatException x){
+					System.err.println("--region-creation-delay must be an integer: " + s);
+					System.exit(1);
+				}
+			} else if (arg.startsWith(METADATA_REGION_NAME_PREFIX)){
+				METADATA_REGION = arg.substring(METADATA_REGION_NAME_PREFIX.length());
+				if (! METADATA_REGION.startsWith("/")){
+					System.err.println("--metadata-region-name must start with \"/\"");
+					System.exit(1);
+				}
 			} else {
 				System.err.println("unrecognized argument: " + arg);
 				System.exit(1);
@@ -211,5 +257,10 @@ public class GemTouch {
 		System.err.println("\t\tif you are not sure of the port number try 1099");		
 		System.err.println("\t--jmxusername and --jmx-manager-password are optional but if either is present the other must also be provided");
 		System.err.println("\t--rate-per-second is optional - acts a a throttle if present");
+		System.err.println();
+		System.err.println("\tif the metadata region \"" + METADATA_REGION + "\" is present it will be touched first ");
+		System.err.println("\tthe name of the metadata region can be set with the --metadata-region-name option");
+		System.err.println("\tafter touching the metadata region the program will pause for 20s to allow for propagation");
+		System.err.println("\tthe length of the wait (in seconds)  can be set using the --region-creation-delay option");
 	}
  }

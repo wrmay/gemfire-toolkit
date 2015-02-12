@@ -44,6 +44,15 @@ gemtouch.py --jmx-manager-host=abc --jmx-manager-port=123 --jmx-username=fred --
 	
 	--rate-per-second is optional - acts a a throttle if present
 
+	if the metadata region (__regionAttributesMetadata by default) is  present it will be touched first
+	
+	the name of the metadata region can be set with the --metadata-region-name option
+	
+	after touching the metadata region the program will pause for 20s to allow for propagation
+	the length of the wait (in seconds)  can be set using the --region-creation-delay option
+
+
+
 #checkred usage
 
 basic usage
