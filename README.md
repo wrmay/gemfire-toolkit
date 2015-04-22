@@ -19,6 +19,24 @@ The "checkred" tool can report regions that are "at risk" because they are not f
 The tool only reports on the redundancy status of partitioned regions.  Replicate regions are 
 redundant so long as more than one member of the distributed system is running.
 
+##trace / untrace##
+
+you must deploy the gemtools jar using the "gfsh deploy" command,
+then ...
+
+to install tracing on a region
+
+```
+trace.py locatorhost[port] /SomeRegion
+```
+
+to remove tracing on a region
+
+```
+untrace.py locatorhost[port] /SomeRegion
+```
+
+
 # Installation
 Unpack the tarball: gemtools-VERSION-runtime.tar.gz
 
