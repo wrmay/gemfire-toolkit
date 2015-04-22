@@ -73,7 +73,7 @@ public class TraceCacheListener implements CacheListener<Object, Object> {
 
 	private void message(String msg, CacheEvent event){
 		DistributedMember member = event.getDistributedMember();
-		log.info("pid " + member.getProcessId() + " on " + member.getHost() + " (" + member.getName() + ")" + msg);
+		log.info(msg);
 	}
 	
 	
