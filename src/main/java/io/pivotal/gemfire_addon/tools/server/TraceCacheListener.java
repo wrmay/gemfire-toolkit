@@ -73,7 +73,7 @@ public class TraceCacheListener implements CacheListener<Object, Object> {
 
 	private void message(String msg, CacheEvent event){
 		DistributedMember member = event.getDistributedMember();
-		log.info(msg);
+		log.info("TRACE: " +  msg);
 	}
 	
 	
