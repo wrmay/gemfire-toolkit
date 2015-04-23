@@ -1,9 +1,9 @@
-/target
-/.settings
-.classpath
-.project
-.pydevproject
-*.pyc
+**/target
+**/.settings
+**/.classpath
+**/.project
+**/.pydevproject
+**/*.pyc
 /cluster/1
 /cluster/2
 /cluster/3
