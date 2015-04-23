@@ -32,22 +32,19 @@ public class Bootstrap {
 	 *  Largely this consists of checking the metadata region has been set-up and
 	 *  will be populated by the event mechanism.
 	 */
-	public static ClientCache createDynamicCache() throws Exception {
+	public static synchronized ClientCache createDynamicCache() throws Exception {
 		
 		ClientCacheFactory clientCacheFactory = new ClientCacheFactory();
 		clientCacheFactory.set("name", System.getProperty("gemfire.name", getClientName()));
-		
 		clientCacheFactory.setPoolSubscriptionEnabled(true);
 		
-		synchronized (clientCache) {
-			clientCache = clientCacheFactory.create();
+		clientCache = clientCacheFactory.create();
+		
+		createRegionAttributesMetadata();
+		validateRegionAttributesMetadata();
+		activateRegionAttributesMetadata();
 			
-			createRegionAttributesMetadata();
-			validateRegionAttributesMetadata();
-			activateRegionAttributesMetadata();
-
-			return clientCache;
-		}
+		return clientCache;
 	}
 	
 
