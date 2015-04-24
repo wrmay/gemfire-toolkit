@@ -36,7 +36,6 @@ public class Bootstrap {
 		
 		ClientCacheFactory clientCacheFactory = new ClientCacheFactory();
 		clientCacheFactory.set("name", System.getProperty("gemfire.name", getClientName()));
-		clientCacheFactory.setPoolSubscriptionEnabled(true);
 		
 		clientCache = clientCacheFactory.create();
 		
