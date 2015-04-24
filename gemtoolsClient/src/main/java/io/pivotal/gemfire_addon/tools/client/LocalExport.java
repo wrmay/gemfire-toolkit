@@ -11,14 +11,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.gemstone.gemfire.DataSerializer;
-import com.gemstone.gemfire.cache.client.ClientCache;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.pdx.JSONFormatter;
 import com.gemstone.gemfire.pdx.PdxInstance;
@@ -62,18 +58,11 @@ import com.gemstone.gemfire.pdx.PdxInstance;
  * <P>The second and any subsequent arguments list the regions to be extracted.
  * These can be named completely (eg. "users"), partially (eg. "user*") or
  * all regions can be selected (ie. "*").
+ * </P>
  */
-public class LocalExport {
+public class LocalExport extends LocalImportExport {
 	private static final String     FILE_SEPARATOR = System.getProperty("file.separator");
 	private static final String     TMP_DIR = System.getProperty("java.io.tmpdir");
-	private static final long 		globalStartTime = System.currentTimeMillis();
-	private static Logger 			LOGGER = null;
-	private static ClientCache 		clientCache = null;
-	private static int 				errorCount=0;
-	
-	// For retrieving multiple rows
-	private static int 				BLOCK_SIZE=-1;
-	private static final int 		DEFAULT_BLOCK_SIZE=1000;
 	
 	// File suffix indicates internal format
 	private static ExportFileType	FILE_CONTENT_TYPE = null;
@@ -120,42 +109,6 @@ public class LocalExport {
 	}
 
 	
-	/* Expecting exactly two locators, formatted as "host:port,host:port" or
-	 * as "host[port],host[port]".
-	 * Parse these and set as system properties for parameterized cache.xml file.
-	 */
-	private void parseLocators(final String arg) throws Exception {
-		Pattern patternSquareBracketStyle = Pattern.compile("(.*)\\[(.*)\\]$");
-		Pattern patternCommaStyle = Pattern.compile("(.*):(.*)$");
-		String[] locators = arg.split(",");
-		
-		if(locators.length!=2) {
-			errorCount++;
-			throw new Exception("'" + arg + "' should list two locators separated by a comma");
-		}
-		
-		for(int i=0 ; i< locators.length ; i++) {
-			// "host:port" or "host[port]" ??
-			Matcher matcher = patternSquareBracketStyle.matcher(locators[i]);
-			
-			if(matcher.matches()) {
-				// "host[port]" style
-				System.setProperty("LOCATOR_" + (i+1) + "_HOST", matcher.group(1));
-				System.setProperty("LOCATOR_" + (i+1) + "_PORT", Integer.parseInt(matcher.group(2)) + "");
-			} else {
-				// "host:port" style ?
-				matcher = patternCommaStyle.matcher(locators[i]);
-				if(matcher.matches()) {
-					System.setProperty("LOCATOR_" + (i+1) + "_HOST", matcher.group(1));
-					System.setProperty("LOCATOR_" + (i+1) + "_PORT", Integer.parseInt(matcher.group(2)) + "");
-				} else {
-					errorCount++;
-					throw new Exception("Could not parse '" + locators[i] + "' as \"host[port]\"");
-				}
-			}
-		
-		}
-	}
 
 	
 	/* Find regions with the given naming pattern and export each
@@ -243,7 +196,7 @@ public class LocalExport {
 	private int writeRecords(DataOutputStream dataOutputStream, Region<?, ?> region, int writeCount) throws Exception {
 		Set<?> keySet = region.keySetOnServer();
 		
-		this.startFile(dataOutputStream, keySet, region.getFullPath());
+		this.startFile(dataOutputStream, region.getFullPath());
 
 		int blockSize = getBlockSize();
 		int readCount=0;
@@ -262,7 +215,7 @@ public class LocalExport {
 			writeCount=writeRecordBlock(dataOutputStream, region, keySubSet, writeCount);
 		}
 		
-		this.endFile(dataOutputStream, writeCount);
+		this.endFile(dataOutputStream);
 		return writeCount;
 	}
 
@@ -311,11 +264,11 @@ public class LocalExport {
 		return writeCount;
 	}
 
-	private void startFile(DataOutputStream dataOutputStream, Set<?> keySet, String regionPath) throws Exception {
+	private void startFile(DataOutputStream dataOutputStream, String regionPath) throws Exception {
 		if(FILE_CONTENT_TYPE==ExportFileType.ADP_DEFAULT_FORMAT) {
 			dataOutputStream.write(AdpExportRecordType.HEADER.getB());
-			String header = String.format("#SOF,%d,%d,%s%s%s", 
-					globalStartTime, keySet.size(), regionPath, System.lineSeparator(),System.lineSeparator());
+			String header = String.format("#SOF,%d,%s%s", 
+					globalStartTime, regionPath, System.lineSeparator());
 			dataOutputStream.write(header.getBytes());
 		}
 	}
@@ -327,20 +280,24 @@ public class LocalExport {
 			Object key = entry.getKey();
 			Object value = entry.getValue();
 			
-			dataOutputStream.write(AdpExportRecordType.HINT.getB());
-			String hint = String.format("#HINT,%s,%s%s%s", 
+			dataOutputStream.write(AdpExportRecordType.HINT_KEY.getB());
+			String hintKey = String.format("#HINT,KEY,%s%s", 
 					key.getClass().getCanonicalName(),
+					System.lineSeparator());
+			dataOutputStream.write(hintKey.getBytes());
+
+			dataOutputStream.write(AdpExportRecordType.HINT_VALUE.getB());
+			String hintValue = String.format("#HINT,VALUE,%s%s", 
 					(value==null?"":value.getClass().getCanonicalName()),
-					System.lineSeparator(),System.lineSeparator());
-			dataOutputStream.write(hint.getBytes());
+					System.lineSeparator());
+			dataOutputStream.write(hintValue.getBytes());
 		}
 	}
 
-	private void endFile(DataOutputStream dataOutputStream, int writeCount) throws Exception {
+	private void endFile(DataOutputStream dataOutputStream) throws Exception {
 		if(FILE_CONTENT_TYPE==ExportFileType.ADP_DEFAULT_FORMAT) {
 			dataOutputStream.write(AdpExportRecordType.FOOTER.getB());
-			String footer = String.format("%s#EOF,%d%s", 
-					System.lineSeparator(), writeCount, System.lineSeparator());
+			String footer = String.format("#EOF%s", System.lineSeparator());
 			dataOutputStream.write(footer.getBytes());
 		}
 	}

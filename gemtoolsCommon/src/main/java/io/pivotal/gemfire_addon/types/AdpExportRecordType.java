@@ -1,10 +1,11 @@
 package io.pivotal.gemfire_addon.types;
 
 public enum AdpExportRecordType {
-	HEADER ((byte)0)
-	,HINT ((byte)1)
-	,DATA ((byte)2)
-	,FOOTER ((byte)4)
+	HEADER 			((byte)0)
+	,HINT_KEY 		((byte)1)
+	,HINT_VALUE 	((byte)2)
+	,DATA 			((byte)4)
+	,FOOTER 		((byte)8)
 	;
 	
 	private final byte b;
