@@ -1,23 +1,10 @@
 package io.pivotal.gemfire_addon.tools.client;
 
 import io.pivotal.gemfire_addon.tools.client.utils.Bootstrap;
-import io.pivotal.gemfire_addon.types.AdpExportRecordType;
 import io.pivotal.gemfire_addon.types.ExportFileType;
-
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
-import java.io.File;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import org.apache.logging.log4j.LogManager;
-
-import com.gemstone.gemfire.DataSerializer;
 import com.gemstone.gemfire.cache.Region;
-import com.gemstone.gemfire.pdx.JSONFormatter;
-import com.gemstone.gemfire.pdx.PdxInstance;
+import com.gemstone.gemfire.cache.client.ClientCache;
 
 /**
  * <P>A simple version of export functionality, complementary to GFSH's "{@code export data}".
@@ -61,16 +48,14 @@ import com.gemstone.gemfire.pdx.PdxInstance;
  * </P>
  */
 public class LocalExport extends LocalImportExport {
-	private static final String     FILE_SEPARATOR = System.getProperty("file.separator");
 	private static final String     TMP_DIR = System.getProperty("java.io.tmpdir");
-	
-	// File suffix indicates internal format
-	private static ExportFileType	FILE_CONTENT_TYPE = null;
-	
+	private static boolean			error = false;
+	private static final long 		globalStartTime = System.currentTimeMillis();
+	private static ClientCache 		clientCache = null;
 	
 	public static void main(String[] args) throws Exception {
 		new LocalExport().process(args);
-		System.exit(errorCount);
+		System.exit(error?1:0);
 	}
 
 	private void usage() {
@@ -78,12 +63,12 @@ public class LocalExport extends LocalImportExport {
 				+ " <locators> region [region] [region]...");
 	}
 	
-	private void process(final String[] args) throws Exception {
+	private void process(String[] args) throws Exception {
 		int regionCount=0;
 		
 		if(args==null || args.length<2) {
 			this.usage();
-			errorCount++;
+			error=true;
 			return;
 		}
 		
@@ -91,6 +76,7 @@ public class LocalExport extends LocalImportExport {
 
 		clientCache = Bootstrap.createDynamicCache();
 		LOGGER = LogManager.getLogger(this.getClass());
+
 		LOGGER.info("Export begins:");
 
 		for(int i=1; i<args.length;i++) {
@@ -100,7 +86,7 @@ public class LocalExport extends LocalImportExport {
 				}
 			} catch (Exception e) {
 				LOGGER.error("Region '" + args[i] + "'", e);
-				errorCount++;
+				error=true;
 			}
 		}
 		
@@ -109,12 +95,13 @@ public class LocalExport extends LocalImportExport {
 	}
 
 	
-
-	
 	/* Find regions with the given naming pattern and export each
 	 */
 	private int exportRegions(final String arg) throws Exception {
 		int matches=0;
+		
+		ExportFileType exportFileType = getFileContentType();
+		LOGGER.debug("Export file type '.{}' selected", exportFileType);
 		
 		String regionPattern = produceRegionPattern(arg);
 		
@@ -128,7 +115,7 @@ public class LocalExport extends LocalImportExport {
 			} else {
 				if(regionName.matches(regionPattern)) {
 					LOGGER.trace("Match of '{}' region against pattern '{}' -> regex '{}'", regionName, arg, regionPattern);
-					exportRegion(region);
+					exportRegion(region, null, globalStartTime, TMP_DIR, exportFileType);
 					matches++;
 				} else {
 					LOGGER.trace("No match of '{}' region against pattern '{}' -> regex '{}'", regionName, arg, regionPattern);
@@ -148,208 +135,17 @@ public class LocalExport extends LocalImportExport {
 		}
 		
 		if(regionNameWithPossibleWildcard.indexOf(Region.SEPARATOR_CHAR)>=0) {
-			errorCount++;
+			error=true;
 			throw new Exception("Region name '" + arg + "' not valid, subregions are not yet supported");
 		}
 		
 		// Disallow deliberate attempts to get at system data, such as system users.
 		if(regionNameWithPossibleWildcard.startsWith("__")) {
-			errorCount++;
+			error=true;
 			throw new Exception("Region name '" + arg + "' not valid, system regions beginning '__' may not be exported");
 		}
 
 		return regionNameWithPossibleWildcard.replace("*", ".*?");
-	}
-
-	
-	/* Get all keys in one go, retrieve the corresponding values in groups of a manageable
-	 * size and write to a file. Produce the file even if empty.
-	 */
-	private void exportRegion(Region<?, ?> region) {
-		try {
-			LOGGER.info("Export begins: Region {}", region.getFullPath());
-			
-			String filename = region.getName() + "." + globalStartTime + "." + getFileContentType().toString().toLowerCase();
-			File file = new File(TMP_DIR + FILE_SEPARATOR + filename);
-			LOGGER.trace("Output file {}", file.getPath());
-			
-			long localStartTime = System.currentTimeMillis();
-			
-			int recordCount=0;
-			try (	FileOutputStream fileOutputStream = new FileOutputStream(file);
-					DataOutputStream dataOutputStream = new DataOutputStream(fileOutputStream);
-					) {
-				recordCount = this.writeRecords(dataOutputStream,region, recordCount);
-			}			
-						
-			long localEndTime = System.currentTimeMillis();
-			LOGGER.info("Export ends: Region {}: {} records exported in {}ms to file '{}'", 
-					region.getFullPath(), recordCount, (localEndTime - localStartTime), filename);
-
-		} catch (Exception e) {
-			errorCount++;
-			LOGGER.error("Fail for " + region.getFullPath(), e);
-		}
-	}
-
-	
-	private int writeRecords(DataOutputStream dataOutputStream, Region<?, ?> region, int writeCount) throws Exception {
-		Set<?> keySet = region.keySetOnServer();
-		
-		this.startFile(dataOutputStream, region.getFullPath());
-
-		int blockSize = getBlockSize();
-		int readCount=0;
-		Set<Object> keySubSet = new HashSet<>(blockSize);
-		for(Object key : keySet) {
-			if(readCount%blockSize==0) {
-				if(readCount>0) {
-					writeCount=writeRecordBlock(dataOutputStream, region, keySubSet, writeCount);
-				}
-				keySubSet.clear();
-			}
-			readCount++;
-			keySubSet.add(key);
-		}
-		if(keySubSet.size()!=0) {
-			writeCount=writeRecordBlock(dataOutputStream, region, keySubSet, writeCount);
-		}
-		
-		this.endFile(dataOutputStream);
-		return writeCount;
-	}
-
-	private int writeRecordBlock(DataOutputStream dataOutputStream,
-			Region<?, ?> region, Set<?> keySubSet, int writeCount) throws Exception {
-
-		Map<?,?> map = region.getAll(keySubSet);
-		for(Map.Entry<?, ?> entry: map.entrySet()) {
-			writeCount=writeRecord(dataOutputStream,entry,writeCount);
-		}
-		
-		return writeCount;
-	}
-
-	/* Write one key/value pair and increment the running total.
-	 * At the moment, there is no filtering.
-	 */
-	private int writeRecord(DataOutputStream dataOutputStream,
-			Entry<?, ?> entry, int writeCount) throws Exception{
-
-		if(writeCount==0) {
-			firstRecordHint(dataOutputStream,entry);
-		}
-		
-		writeCount++;
-		if(FILE_CONTENT_TYPE==ExportFileType.ADP_DEFAULT_FORMAT) {
-			dataOutputStream.write(AdpExportRecordType.DATA.getB());
-			for(Object o : new Object[] { entry.getKey(), entry.getValue() }) {
-				
-				if(o==null) {
-					throw new Exception("Cannot export null");
-				} else {
-					if(o instanceof PdxInstance) {
-						PdxInstance pdxInstance = (PdxInstance) o;
-						DataSerializer.writeObject(JSONFormatter.toJSON(pdxInstance),dataOutputStream);
-					} else {
-						DataSerializer.writeObject(o,dataOutputStream);
-					}
-				}
-				
-			}
-		} else {
-			throw new Exception("Export type not supported yet: " + FILE_CONTENT_TYPE);
-		}
-		
-		return writeCount;
-	}
-
-	private void startFile(DataOutputStream dataOutputStream, String regionPath) throws Exception {
-		if(FILE_CONTENT_TYPE==ExportFileType.ADP_DEFAULT_FORMAT) {
-			dataOutputStream.write(AdpExportRecordType.HEADER.getB());
-			String header = String.format("#SOF,%d,%s%s", 
-					globalStartTime, regionPath, System.lineSeparator());
-			dataOutputStream.write(header.getBytes());
-		}
-	}
-
-	/* Writing the key/value type prior to the data can allow the import to be optimized
-	 */
-	private void firstRecordHint(DataOutputStream dataOutputStream, Entry<?, ?> entry) throws Exception {
-		if(FILE_CONTENT_TYPE==ExportFileType.ADP_DEFAULT_FORMAT) {
-			Object key = entry.getKey();
-			Object value = entry.getValue();
-			
-			dataOutputStream.write(AdpExportRecordType.HINT_KEY.getB());
-			String hintKey = String.format("#HINT,KEY,%s%s", 
-					key.getClass().getCanonicalName(),
-					System.lineSeparator());
-			dataOutputStream.write(hintKey.getBytes());
-
-			dataOutputStream.write(AdpExportRecordType.HINT_VALUE.getB());
-			String hintValue = String.format("#HINT,VALUE,%s%s", 
-					(value==null?"":value.getClass().getCanonicalName()),
-					System.lineSeparator());
-			dataOutputStream.write(hintValue.getBytes());
-		}
-	}
-
-	private void endFile(DataOutputStream dataOutputStream) throws Exception {
-		if(FILE_CONTENT_TYPE==ExportFileType.ADP_DEFAULT_FORMAT) {
-			dataOutputStream.write(AdpExportRecordType.FOOTER.getB());
-			String footer = String.format("#EOF%s", System.lineSeparator());
-			dataOutputStream.write(footer.getBytes());
-		}
-	}
-
-	/*  For now, preset the output file format. Allow for future to specify type
-	 * as enum choices.
-	 */
-	private ExportFileType getFileContentType() {
-		if(FILE_CONTENT_TYPE!=null) {
-			return FILE_CONTENT_TYPE;
-		}
-		
-		// If unset, use default
-		if(FILE_CONTENT_TYPE==null) {
-			FILE_CONTENT_TYPE = ExportFileType.ADP_DEFAULT_FORMAT;
-		}
-		
-		LOGGER.debug("Export file type '.{}' selected", FILE_CONTENT_TYPE);
-		return FILE_CONTENT_TYPE;
-	}
-
-	/*  Allow a system property to tune the number of keys for a getAll()
-	 * 
-	 *TODO: What would be a sensible upper limit ?
-	 */
-	private int getBlockSize() {
-		if(BLOCK_SIZE>0) {
-			return BLOCK_SIZE;
-		}
-
-		// If specified and valid, use it
-		String tmpStr = System.getProperty("BLOCK_SIZE");
-		if(tmpStr!=null) {
-			try {
-				int tmpValue = Integer.parseInt(tmpStr);
-				if(tmpValue<1) {
-					throw new Exception("BLOCK_SIZE must be positive");
-				}
-				BLOCK_SIZE = tmpValue;
-			} catch (Exception e) {
-				errorCount++;
-				LOGGER.error("Can't use '" + tmpStr + "' for BLOCK_SIZE", e);
-			}
-		}
-		
-		// If unset, use default
-		if(BLOCK_SIZE<=0) {
-			BLOCK_SIZE = DEFAULT_BLOCK_SIZE;
-		}
-		
-		LOGGER.debug("Block size={} being used for getAll()", BLOCK_SIZE);
-		return BLOCK_SIZE;
 	}
 	
 }

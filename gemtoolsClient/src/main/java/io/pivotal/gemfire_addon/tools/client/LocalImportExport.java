@@ -1,21 +1,18 @@
 package io.pivotal.gemfire_addon.tools.client;
 
-import com.gemstone.gemfire.cache.client.ClientCache;
+import io.pivotal.gemfire_addon.tools.ImportExport;
+import io.pivotal.gemfire_addon.types.ExportFileType;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.logging.log4j.Logger;
 
-public abstract class LocalImportExport {
-	protected static final byte         EOL = System.lineSeparator().getBytes()[0];
-	protected static final long 		globalStartTime = System.currentTimeMillis();
-	protected static Logger 			LOGGER = null;
-	protected static ClientCache 		clientCache = null;
-	protected static int 				errorCount=0;
+
+/*  Export/import utils for client side export.
+ */
+public abstract class LocalImportExport extends ImportExport {
+	// File suffix indicates internal format
+	private static ExportFileType	FILE_CONTENT_TYPE = null;
 	
-	// Size limit for collection handling for getAll()/putAll()
-	protected static int 				BLOCK_SIZE=-1;
-	protected static final int 			DEFAULT_BLOCK_SIZE=1000;
-
 	/* Expecting exactly two locators, formatted as "host:port,host:port" or
 	 * as "host[port],host[port]".
 	 * Parse these and set as system properties for parameterized cache.xml file.
@@ -26,7 +23,6 @@ public abstract class LocalImportExport {
 		String[] locators = arg.split(",");
 		
 		if(locators.length!=2) {
-			errorCount++;
 			throw new Exception("'" + arg + "' should list two locators separated by a comma");
 		}
 		
@@ -45,12 +41,27 @@ public abstract class LocalImportExport {
 					System.setProperty("LOCATOR_" + (i+1) + "_HOST", matcher.group(1));
 					System.setProperty("LOCATOR_" + (i+1) + "_PORT", Integer.parseInt(matcher.group(2)) + "");
 				} else {
-					errorCount++;
 					throw new Exception("Could not parse '" + locators[i] + "' as \"host[port]\"");
 				}
 			}
 		
 		}
+	}
+	
+	/*  For now, preset the output file format. Allow for future to specify type
+	 * as enum choices.
+	 */
+	protected ExportFileType getFileContentType() {
+		if(FILE_CONTENT_TYPE!=null) {
+			return FILE_CONTENT_TYPE;
+		}
+		
+		// If unset, use default
+		if(FILE_CONTENT_TYPE==null) {
+			FILE_CONTENT_TYPE = ExportFileType.ADP_DEFAULT_FORMAT;
+		}
+		
+		return FILE_CONTENT_TYPE;
 	}
 
 }

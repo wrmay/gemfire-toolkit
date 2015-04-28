@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 
 import com.gemstone.gemfire.DataSerializer;
 import com.gemstone.gemfire.cache.Region;
+import com.gemstone.gemfire.cache.client.ClientCache;
 import com.gemstone.gemfire.pdx.JSONFormatter;
 import com.gemstone.gemfire.pdx.PdxInstance;
 
@@ -56,12 +57,17 @@ import com.gemstone.gemfire.pdx.PdxInstance;
  * </P>
  */
 public class LocalImport extends LocalImportExport {
-	private Class<?> 	keyClass = null;
-	private Class<?>	valueClass = null;
-			
+	private static final byte       EOL = System.lineSeparator().getBytes()[0];
+	private static boolean			error = false;
+	private static ClientCache 		clientCache = null;
+	private static final long 		globalStartTime = System.currentTimeMillis();
+
+	private Class<?> 				keyClass = null;
+	private Class<?>				valueClass = null;
+
 	public static void main(String[] args) throws Exception {
 		new LocalImport().process(args);
-		System.exit(errorCount);
+		System.exit(error?1:0);
 	}
 
 	private void usage() {
@@ -74,7 +80,7 @@ public class LocalImport extends LocalImportExport {
 		
 		if(args==null || args.length<2) {
 			this.usage();
-			errorCount++;
+			error=true;
 			return;
 		}
 		
@@ -92,7 +98,7 @@ public class LocalImport extends LocalImportExport {
 				}
 			} catch (Exception e) {
 				LOGGER.error("File '" + args[i] + "'", e);
-				errorCount++;
+				error=true;
 			}
 		}
 		
@@ -115,7 +121,7 @@ public class LocalImport extends LocalImportExport {
 		// Parse filename back into region name
 		String[] tokens = filename.split("\\.");
 		if(tokens.length<3) {
-			errorCount++;
+			error=true;
 			throw new Exception("File name '" + arg + "' not valid, needs region name, timestamp and format");
 		}
 		
@@ -138,13 +144,13 @@ public class LocalImport extends LocalImportExport {
 		}
 		
 		if(regionName.indexOf(Region.SEPARATOR_CHAR)>=0) {
-			errorCount++;
+			error=true;
 			throw new Exception("Region name '" + arg + "' not valid, subregions are not yet supported");
 		}
 		
 		// Disallow deliberate attempts to overwrite system data, such as system users.
 		if(regionName.startsWith("__")) {
-			errorCount++;
+			error=true;
 			throw new Exception("Region name '" + arg + "' not valid, system regions beginning '__' may not be imported");
 		}
 		
@@ -156,7 +162,7 @@ public class LocalImport extends LocalImportExport {
 
 		Region<?,?> region = clientCache.getRegion(regionName);
 		if(region==null) {
-			errorCount++;
+			error=true;
 			throw new Exception("Region name '" + regionName + "' not found");
 		}
 
@@ -195,7 +201,7 @@ public class LocalImport extends LocalImportExport {
 					region.getFullPath(), recordCount, (localEndTime - localStartTime), file.getName());
 
 		} catch (Exception e) {
-			errorCount++;
+			error=true;
 			LOGGER.error("Fail for " + region.getFullPath(), e);
 		}
 	}
@@ -360,7 +366,7 @@ public class LocalImport extends LocalImportExport {
 				}
 				BLOCK_SIZE = tmpValue;
 			} catch (Exception e) {
-				errorCount++;
+				error=true;
 				LOGGER.error("Can't use '" + tmpStr + "' for BLOCK_SIZE", e);
 			}
 		}
