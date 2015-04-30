@@ -1,21 +1,30 @@
-package io.pivotal.gemfire_addon.tools.client;
-
-import io.pivotal.gemfire_addon.tools.ImportExport;
-import io.pivotal.gemfire_addon.types.ExportFileType;
+package io.pivotal.gemfire_addon.tools;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.logging.log4j.Logger;
 
-/*  Export/import utils for client side export.
+/**
+ * <P>
+ * Methods common to clientside or serverside export and import.
+ * </P>
+ *
  */
-public abstract class LocalImportExport extends ImportExport {
-	// File suffix indicates internal format
-	private static ExportFileType	FILE_CONTENT_TYPE = null;
+public abstract class CommonExportImport {
+	protected static final String     	FILE_SEPARATOR = System.getProperty("file.separator");
 	
+	// Size limit for collection handling for getAll()/putAll()
+	protected static int 				BLOCK_SIZE=-1;
+	protected static final int 			DEFAULT_BLOCK_SIZE=1000;
+	protected static Logger 			LOGGER = null;
+
 	/* Expecting exactly two locators, formatted as "host:port,host:port" or
 	 * as "host[port],host[port]".
 	 * Parse these and set as system properties for parameterized cache.xml file.
+	 * 
+	 * This method is unlikely to be of use to the serverside, but goes here
+	 * to simplify the abstract/extends hierarchy with single inheritance.
 	 */
 	protected void parseLocators(final String arg) throws Exception {
 		Pattern patternSquareBracketStyle = Pattern.compile("(.*)\\[(.*)\\]$");
@@ -47,21 +56,38 @@ public abstract class LocalImportExport extends ImportExport {
 		
 		}
 	}
+
 	
-	/*  For now, preset the output file format. Allow for future to specify type
-	 * as enum choices.
+	/*  Allow a system property to tune the number of keys for a getAll()/putAll()
+	 * 
+	 *TODO: What would be a sensible upper limit ?
 	 */
-	protected ExportFileType getFileContentType() {
-		if(FILE_CONTENT_TYPE!=null) {
-			return FILE_CONTENT_TYPE;
+	protected int getBlockSize() {
+		if(BLOCK_SIZE>0) {
+			return BLOCK_SIZE;
+		}
+
+		// If specified and valid, use it
+		String tmpStr = System.getProperty("BLOCK_SIZE");
+		if(tmpStr!=null) {
+			try {
+				int tmpValue = Integer.parseInt(tmpStr);
+				if(tmpValue<1) {
+					throw new Exception("BLOCK_SIZE must be positive");
+				}
+				BLOCK_SIZE = tmpValue;
+			} catch (Exception e) {
+				LOGGER.error("Can't use '" + tmpStr + "' for BLOCK_SIZE", e);
+			}
 		}
 		
 		// If unset, use default
-		if(FILE_CONTENT_TYPE==null) {
-			FILE_CONTENT_TYPE = ExportFileType.ADP_DEFAULT_FORMAT;
+		if(BLOCK_SIZE<=0) {
+			BLOCK_SIZE = DEFAULT_BLOCK_SIZE;
 		}
 		
-		return FILE_CONTENT_TYPE;
+		LOGGER.debug("Block size={} being used for getAll()", BLOCK_SIZE);
+		return BLOCK_SIZE;
 	}
 
 }

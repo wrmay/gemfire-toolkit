@@ -3,7 +3,7 @@ package io.pivotal.gemfire_addon.types;
 import java.io.File;
 import java.io.Serializable;
 
-public class ExportResult implements Serializable {
+public class ImportResponse implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	private transient File file;
@@ -45,7 +45,7 @@ public class ExportResult implements Serializable {
 	
 	@Override
 	public String toString() {
-		return "ExportResult [fileDir=" + fileDir + ", fileName=" + fileName
+		return "ImportResponse [fileDir=" + fileDir + ", fileName=" + fileName
 				+ ", recordsRead=" + recordsRead + ", recordsWritten="
 				+ recordsWritten + "]";
 	}

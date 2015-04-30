@@ -2,7 +2,7 @@ package io.pivotal.gemfire_addon.tools;
 
 import io.pivotal.gemfire_addon.types.AdpExportRecordType;
 import io.pivotal.gemfire_addon.types.ExportFileType;
-import io.pivotal.gemfire_addon.types.ExportResult;
+import io.pivotal.gemfire_addon.types.ExportResponse;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -12,21 +12,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import org.apache.logging.log4j.Logger;
-
 import com.gemstone.gemfire.DataSerializer;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.client.ClientCacheFactory;
 import com.gemstone.gemfire.pdx.JSONFormatter;
 import com.gemstone.gemfire.pdx.PdxInstance;
 
-public abstract class ImportExport {
-	private static final String     	FILE_SEPARATOR = System.getProperty("file.separator");
-	
-	// Size limit for collection handling for getAll()/putAll()
-	protected static int 				BLOCK_SIZE=-1;
-	protected static final int 			DEFAULT_BLOCK_SIZE=1000;
-	protected static Logger 			LOGGER = null;
+/**
+ * <P>
+ * Methods common to clientside or serverside export
+ * </P>
+ *
+ */
+public abstract class CommonExport extends CommonExportImport {
 	
 	/** <P>Get all keys in one go, retrieve the corresponding values in groups of a manageable
 	 * size and write to a file. Produce the file even if empty.
@@ -38,9 +36,9 @@ public abstract class ImportExport {
 	 * @param exportFileType    The format to use
 	 * @return                  A results object, indicating export file details, size, name, etc
 	 */
-	public ExportResult exportRegion(final Region<?, ?> region, final String member, 
+	public ExportResponse exportRegion(final Region<?, ?> region, final String member, 
 			final long timestamp, final String directory, final ExportFileType exportFileType) {
-		ExportResult exportResult = new ExportResult();
+		ExportResponse exportResponse = new ExportResponse();
 
 		boolean isClient=true;
 		try {
@@ -52,29 +50,29 @@ public abstract class ImportExport {
 		try {
 			LOGGER.info("Export begins: Region {}", region.getFullPath());
 			
-			this.deriveFile(exportResult, region, member, timestamp, directory, exportFileType, isClient);
-			LOGGER.trace("Output file {}", exportResult.getFileName());
+			this.deriveFile(exportResponse, region, member, timestamp, directory, exportFileType, isClient);
+			LOGGER.trace("Output file {}", exportResponse.getFileName());
 			
 			long localStartTime = System.currentTimeMillis();
 			
-			try (	FileOutputStream fileOutputStream = new FileOutputStream(exportResult.getFile());
+			try (	FileOutputStream fileOutputStream = new FileOutputStream(exportResponse.getFile());
 					DataOutputStream dataOutputStream = new DataOutputStream(fileOutputStream);
 					) {
-				this.writeRecords(dataOutputStream,region,exportResult,localStartTime,exportFileType,isClient);
+				this.writeRecords(dataOutputStream,region,exportResponse,localStartTime,exportFileType,isClient);
 			}			
 						
 			long localEndTime = System.currentTimeMillis();
 			LOGGER.info("Export ends: Region {}: {} records exported in {}ms to file '{}'", 
-					region.getFullPath(), exportResult.getRecordsWritten(), (localEndTime - localStartTime), exportResult.getFileName());
+					region.getFullPath(), exportResponse.getRecordsWritten(), (localEndTime - localStartTime), exportResponse.getFileName());
 
 		} catch (Exception e) {
 			LOGGER.error("Fail for " + region.getFullPath(), e);
 		}
 		
-		return exportResult;
+		return exportResponse;
 	}
 
-	private void deriveFile(ExportResult exportResult, final Region<?, ?> region,
+	private void deriveFile(ExportResponse exportResponse, final Region<?, ?> region,
 			String member, long timestamp, String directory, final ExportFileType exportFileType, boolean isClient) {
 		StringBuffer sb = new StringBuffer();
 		
@@ -88,18 +86,18 @@ public abstract class ImportExport {
 		sb.append("." + timestamp);
 		sb.append("." + exportFileType.toString().toLowerCase());
 		
-		exportResult.setFileName(sb.toString());
+		exportResponse.setFileName(sb.toString());
 		if(directory!=null && directory.length()>0) {
-			exportResult.setFileDir(directory);
+			exportResponse.setFileDir(directory);
 		} else {
-			exportResult.setFileDir(".");
+			exportResponse.setFileDir(".");
 		}
 
-		exportResult.setFile(new File(exportResult.getFileDir() + FILE_SEPARATOR + exportResult.getFileName()));
+		exportResponse.setFile(new File(exportResponse.getFileDir() + FILE_SEPARATOR + exportResponse.getFileName()));
 	}
 
 	private void writeRecords(DataOutputStream dataOutputStream, Region<?, ?> region, 
-			ExportResult exportResult, long startTime, ExportFileType exportFileType, boolean isClient) throws Exception {
+			ExportResponse exportResponse, long startTime, ExportFileType exportFileType, boolean isClient) throws Exception {
 		Set<?> keySet = null;
 		if(isClient) {
 			keySet = region.keySetOnServer();
@@ -128,8 +126,8 @@ public abstract class ImportExport {
 		}
 		
 		this.endFile(dataOutputStream,exportFileType);
-		exportResult.setRecordsRead(readCount);
-		exportResult.setRecordsWritten(writeCount);
+		exportResponse.setRecordsRead(readCount);
+		exportResponse.setRecordsWritten(writeCount);
 	}
 
 	private int writeRecordBlock(DataOutputStream dataOutputStream,
@@ -214,38 +212,4 @@ public abstract class ImportExport {
 			dataOutputStream.write(footer.getBytes());
 		}
 	}
-
-
-	/*  Allow a system property to tune the number of keys for a getAll()/putAll()
-	 * 
-	 *TODO: What would be a sensible upper limit ?
-	 */
-	private int getBlockSize() {
-		if(BLOCK_SIZE>0) {
-			return BLOCK_SIZE;
-		}
-
-		// If specified and valid, use it
-		String tmpStr = System.getProperty("BLOCK_SIZE");
-		if(tmpStr!=null) {
-			try {
-				int tmpValue = Integer.parseInt(tmpStr);
-				if(tmpValue<1) {
-					throw new Exception("BLOCK_SIZE must be positive");
-				}
-				BLOCK_SIZE = tmpValue;
-			} catch (Exception e) {
-				LOGGER.error("Can't use '" + tmpStr + "' for BLOCK_SIZE", e);
-			}
-		}
-		
-		// If unset, use default
-		if(BLOCK_SIZE<=0) {
-			BLOCK_SIZE = DEFAULT_BLOCK_SIZE;
-		}
-		
-		LOGGER.debug("Block size={} being used for getAll()", BLOCK_SIZE);
-		return BLOCK_SIZE;
-	}
-
 }

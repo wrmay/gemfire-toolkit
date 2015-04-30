@@ -1,9 +1,9 @@
 package io.pivotal.gemfire_addon.functions;
 
 import io.pivotal.gemfire_addon.functions.FunctionCatalog;
-import io.pivotal.gemfire_addon.tools.ImportExport;
+import io.pivotal.gemfire_addon.tools.CommonExport;
 import io.pivotal.gemfire_addon.types.ExportFileType;
-import io.pivotal.gemfire_addon.types.ExportResult;
+import io.pivotal.gemfire_addon.types.ExportResponse;
 
 import java.util.Properties;
 
@@ -35,8 +35,24 @@ import com.gemstone.gemfire.cache.partition.PartitionRegionHelper;
  * written to the export. For example, SSNs and other personally identifiable data
  * may need to be masked.
  * </P>
+ * <P>
+ * <I>Usage:</I>
+ * <UL>
+ * <LI>Standard function execution of "{@code ADPParallelExport}" invoked from a client
+ * or GFSH. Function should be invoked {@code onRegion(Region)} and will run on all
+ * servers hosting the region.
+ * </LI>
+ * <LI>1st argument, {@link java.lang.Long}, optional but recommended timestamp to use when
+ * naming the produced files.
+ * </LI>
+ * </UL>
  * <B>NOTES:</B>
  * <OL>
+ * <LI>
+ * The function runs on several servers. If a timestamp argument is given, they all receive
+ * this so all produced files embed the same timestamp and are easily collated. If omitted
+ * each server will use its current time and this may vary slightly from process to process.
+ * </LI>
  * <LI>
  * To avoid impacting on other processes, the cluster is not frozen while the export
  * is running. This means the export may miss updates from other processes that are
@@ -57,7 +73,7 @@ import com.gemstone.gemfire.cache.partition.PartitionRegionHelper;
  * io.pivotal.gemfire_addon.functions.ADPParallelImport}
  * </OL>
  */
-public class ADPParallelExport extends ImportExport implements Declarable, Function {
+public class ADPParallelExport extends CommonExport implements Declarable, Function {
 	private static final long serialVersionUID = 1L;
 	private Cache cache = null;
 
@@ -97,11 +113,11 @@ public class ADPParallelExport extends ImportExport implements Declarable, Funct
 				region = PartitionRegionHelper.getLocalPrimaryData(region);
 			}
 			
-			ExportResult exportResult = this.exportRegion(region, myName, startTime, "", ExportFileType.ADP_DEFAULT_FORMAT);
+			ExportResponse exportResponse = this.exportRegion(region, myName, startTime, "", ExportFileType.ADP_DEFAULT_FORMAT);
 			
-			LOGGER.debug("Export of {} ends, result {}", regionName, exportResult);
+			LOGGER.debug("Export of {} ends, result {}", regionName, exportResponse);
 			
-			functionContext.getResultSender().lastResult(exportResult);
+			functionContext.getResultSender().lastResult(exportResponse);
 		} catch (Exception exception) {
 			LOGGER.debug("Export failed:", exception.getMessage());
 			RuntimeException serializableException = new RuntimeException(exception.getMessage());

@@ -1,8 +1,11 @@
 package io.pivotal.gemfire_addon.tools.client;
 
+import io.pivotal.gemfire_addon.tools.CommonExport;
 import io.pivotal.gemfire_addon.tools.client.utils.Bootstrap;
 import io.pivotal.gemfire_addon.types.ExportFileType;
+
 import org.apache.logging.log4j.LogManager;
+
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.client.ClientCache;
 
@@ -47,8 +50,10 @@ import com.gemstone.gemfire.cache.client.ClientCache;
  * all regions can be selected (ie. "*").
  * </P>
  */
-public class LocalExport extends LocalImportExport {
+public class LocalExport extends CommonExport {
 	private static final String     TMP_DIR = System.getProperty("java.io.tmpdir");
+	// File suffix indicates internal format
+	private static ExportFileType	FILE_CONTENT_TYPE = null;
 	private static boolean			error = false;
 	private static final long 		globalStartTime = System.currentTimeMillis();
 	private static ClientCache 		clientCache = null;
@@ -63,7 +68,7 @@ public class LocalExport extends LocalImportExport {
 				+ " <locators> region [region] [region]...");
 	}
 	
-	private void process(String[] args) throws Exception {
+	protected void process(String[] args) throws Exception {
 		int regionCount=0;
 		
 		if(args==null || args.length<2) {
@@ -148,4 +153,20 @@ public class LocalExport extends LocalImportExport {
 		return regionNameWithPossibleWildcard.replace("*", ".*?");
 	}
 	
+	/*  For now, preset the output file format. Allow for future to specify type
+	 * as enum choices.
+	 */
+	private ExportFileType getFileContentType() {
+		if(FILE_CONTENT_TYPE!=null) {
+			return FILE_CONTENT_TYPE;
+		}
+		
+		// If unset, use default
+		if(FILE_CONTENT_TYPE==null) {
+			FILE_CONTENT_TYPE = ExportFileType.ADP_DEFAULT_FORMAT;
+		}
+		
+		return FILE_CONTENT_TYPE;
+	}
+
 }
