@@ -1,10 +1,7 @@
 package io.pivotal.gemfire_addon.functions;
 
 import io.pivotal.gemfire_addon.functions.FunctionCatalog;
-import io.pivotal.gemfire_addon.tools.CommonExport;
 import io.pivotal.gemfire_addon.tools.CommonImport;
-import io.pivotal.gemfire_addon.types.ExportFileType;
-import io.pivotal.gemfire_addon.types.ExportResponse;
 import io.pivotal.gemfire_addon.types.ImportRequest;
 import io.pivotal.gemfire_addon.types.ImportResponse;
 
@@ -13,9 +10,6 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.gemstone.gemfire.LogWriter;
 import com.gemstone.gemfire.cache.Cache;
 import com.gemstone.gemfire.cache.CacheFactory;
 import com.gemstone.gemfire.cache.Declarable;
@@ -23,7 +17,6 @@ import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.execute.Function;
 import com.gemstone.gemfire.cache.execute.FunctionContext;
 import com.gemstone.gemfire.cache.execute.RegionFunctionContext;
-import com.gemstone.gemfire.cache.partition.PartitionRegionHelper;
 
 /**
  * <P>
@@ -113,15 +106,12 @@ public class ADPParallelImport extends CommonImport implements Declarable, Funct
 			List<ImportResponse> results = new ArrayList<>();
 			for(ImportRequest importRequest : (List<ImportRequest>)args) {
 				if(myName.equalsIgnoreCase(importRequest.getMember())) {
-					LOGGER.trace("Starting import of {}", importRequest.getFileName());
-					LOGGER.error("XXXStarting import of {}", importRequest.getFileName());//XXX
+					LOGGER.error("Starting import of {}", importRequest.getFileName());//TODO Change to trace
 					ImportResponse importResponse = this.importRegion(region, importRequest.getFileDir(), importRequest.getFileName());
-					LOGGER.trace("Completed import of {} as {}", importRequest.getFileName(), importResponse);
-					LOGGER.error("XXXCompleted import of {} as {}", importRequest.getFileName(), importResponse);//XXX
+					LOGGER.error("Completed import of {} as {}", importRequest.getFileName(), importResponse);//TODO Change to trace
 					results.add(importResponse);
 				} else {
-					LOGGER.trace("Ignoring import of {} for {}", importRequest.getFileName(), importRequest.getMember());
-					LOGGER.error("XXXIgnoring import of {} for {}", importRequest.getFileName(), importRequest.getMember());//XXX
+					LOGGER.error("Ignoring import of {} for {}", importRequest.getFileName(), importRequest.getMember());//TODO Change to trace
 				}
 				
 			}
@@ -138,7 +128,7 @@ public class ADPParallelImport extends CommonImport implements Declarable, Funct
 	}
 
 	public String getId() {
-		return FunctionCatalog.PARALLEL_IMPORT_FN;
+		return FunctionCatalog.PARALLEL_IMPORT_FN.toString();
 	}
 
 	public boolean hasResult() {

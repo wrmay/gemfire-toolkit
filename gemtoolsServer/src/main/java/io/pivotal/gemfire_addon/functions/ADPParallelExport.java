@@ -83,6 +83,7 @@ public class ADPParallelExport extends CommonExport implements Declarable, Funct
 	 */
 	public void execute(final FunctionContext functionContext) {
 		String myName = cache.getName();
+		String myHost = cache.getDistributedSystem().getDistributedMember().getHost();
 		long currentTime = System.currentTimeMillis();
 
 		try {
@@ -113,7 +114,7 @@ public class ADPParallelExport extends CommonExport implements Declarable, Funct
 				region = PartitionRegionHelper.getLocalPrimaryData(region);
 			}
 			
-			ExportResponse exportResponse = this.exportRegion(region, myName, startTime, "", ExportFileType.ADP_DEFAULT_FORMAT);
+			ExportResponse exportResponse = this.exportRegionKeySet(region, myName, myHost, startTime, "", ExportFileType.ADP_DEFAULT_FORMAT);
 			
 			LOGGER.debug("Export of {} ends, result {}", regionName, exportResponse);
 			
@@ -127,7 +128,7 @@ public class ADPParallelExport extends CommonExport implements Declarable, Funct
 	}
 
 	public String getId() {
-		return FunctionCatalog.PARALLEL_EXPORT_FN;
+		return FunctionCatalog.PARALLEL_EXPORT_FN.toString();
 	}
 
 	public boolean hasResult() {

@@ -2,22 +2,14 @@ package io.pivotal.gemfire_addon.tools.client;
 
 import io.pivotal.gemfire_addon.tools.CommonImport;
 import io.pivotal.gemfire_addon.tools.client.utils.Bootstrap;
-import io.pivotal.gemfire_addon.types.AdpExportRecordType;
 import io.pivotal.gemfire_addon.types.ExportFileType;
 
-import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 
-import com.gemstone.gemfire.DataSerializer;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.client.ClientCache;
-import com.gemstone.gemfire.pdx.JSONFormatter;
-import com.gemstone.gemfire.pdx.PdxInstance;
 
 /**
  * <P>A simple version of import functionality, complementary to GFSH's "{@code import data}".

@@ -1,5 +1,6 @@
 package io.pivotal.gemfire_addon.tools;
 
+import io.pivotal.gemfire_addon.functions.FunctionCatalog;
 import io.pivotal.gemfire_addon.types.AdpExportRecordType;
 import io.pivotal.gemfire_addon.types.ExportFileType;
 import io.pivotal.gemfire_addon.types.ExportResponse;
@@ -7,7 +8,9 @@ import io.pivotal.gemfire_addon.types.ExportResponse;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -15,6 +18,9 @@ import java.util.Map.Entry;
 import com.gemstone.gemfire.DataSerializer;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.client.ClientCacheFactory;
+import com.gemstone.gemfire.cache.execute.Execution;
+import com.gemstone.gemfire.cache.execute.FunctionService;
+import com.gemstone.gemfire.cache.execute.ResultCollector;
 import com.gemstone.gemfire.pdx.JSONFormatter;
 import com.gemstone.gemfire.pdx.PdxInstance;
 
@@ -25,20 +31,74 @@ import com.gemstone.gemfire.pdx.PdxInstance;
  *
  */
 public abstract class CommonExport extends CommonExportImport {
-	
+
+	/**
+	 * Invoke the export region function
+	 * 
+	 * @param region            Function runs on a single region
+	 * @param globalstarttime   Tag for the export file names
+	 * @param exportFileType	File format for the export
+	 * @retrun 					Function execution results object
+	 */
+	@SuppressWarnings("unchecked")
+	public List<ExportResponse> exportRegionFunction(Region<?, ?> region,
+			long timestamp, ExportFileType exportFileType) {
+
+		Object args = new Long(timestamp);
+		Execution execution = FunctionService.onRegion(region).withArgs(args);
+		ResultCollector<?, ?> resultsCollector = execution.execute(FunctionCatalog.PARALLEL_EXPORT_FN.toString());
+		List<ExportResponse> results = null;
+		try {
+			LOGGER.info("Export begins: Region {}", region.getFullPath());
+			
+			long localStartTime = System.currentTimeMillis();
+
+			results = (List<ExportResponse>) resultsCollector.getResult();
+
+			Collections.sort(results);
+			
+			long localEndTime = System.currentTimeMillis();
+
+			int recordsWritten=0;
+			for(ExportResponse result : results) {
+				/* Log the details of which files are where in CSV format,
+				 * making it easier for any script to parse, to then
+				 * copy the files to a different location
+				 */
+				LOGGER.debug("host,{},server,{},directory,{},file,{}", 
+						result.getHostName(),result.getMemberName(),result.getFileDir(),result.getFileName());
+				recordsWritten += result.getRecordsWritten();
+			}
+			
+			LOGGER.info("Export ends: Region {}: {} records exported in {}ms", 
+					region.getFullPath(), recordsWritten, (localEndTime - localStartTime));
+		
+		} catch (Exception e) {
+			LOGGER.error("Fail for " + region.getFullPath(), e);
+
+		}
+
+		return results;
+	}
+
 	/** <P>Get all keys in one go, retrieve the corresponding values in groups of a manageable
 	 * size and write to a file. Produce the file even if empty.
 	 * </P>
 	 * @param region	 		The region to export
 	 * @param member     		[Optional] the name of the process writing the export, for the export filename
+	 * @param host              [Optional] the hostname for the member
 	 * @param timestamp  		The filestamp for when the export started, for the export filename
 	 * @param directory			The directory to write to
 	 * @param exportFileType    The format to use
 	 * @return                  A results object, indicating export file details, size, name, etc
 	 */
-	public ExportResponse exportRegion(final Region<?, ?> region, final String member, 
+	public ExportResponse exportRegionKeySet(final Region<?, ?> region, final String member, final String host,
 			final long timestamp, final String directory, final ExportFileType exportFileType) {
 		ExportResponse exportResponse = new ExportResponse();
+		
+		exportResponse.setRegionName(region.getFullPath());
+		exportResponse.setMemberName(member==null?"":member);
+		exportResponse.setHostName(host==null?"":host);
 
 		boolean isClient=true;
 		try {

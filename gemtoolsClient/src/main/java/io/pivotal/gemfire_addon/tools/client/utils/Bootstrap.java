@@ -90,7 +90,7 @@ public class Bootstrap {
 		}
 		
 		if(!clientCache.getPdxReadSerialized()) {
-			//FIXME : Validate if this is needed for client side
+			//TODO : Validate if this is needed for client side
 			throw new Exception("Cache PDX option should be set for read-serialized");
 		}
 
