@@ -3,7 +3,7 @@
   <parent>
   	<groupId>io.pivotal.gemfire_addon</groupId>
   	<artifactId>gemtools</artifactId>
-  	<version>0.3-SNAPSHOT</version>
+  	<version>0.5-SNAPSHOT</version>
   	<relativePath>..</relativePath>
   </parent>
   <artifactId>gemtoolsPom</artifactId>
@@ -14,7 +14,7 @@
   	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	
 	<!-- TODO: Make these submodules of this project? -->
-  	<adp-dynamic-region-management.version>0.3.2-SNAPSHOT</adp-dynamic-region-management.version>
+  	<adp-dynamic-region-management.version>0.3.5-SNAPSHOT</adp-dynamic-region-management.version>
   	<titanium-gemfire-security.version>0.3.2-SNAPSHOT</titanium-gemfire-security.version>
   </properties>
   
@@ -88,30 +88,8 @@
   			<version>${titanium-gemfire-security.version}</version>
   		</dependency>
 		
-		<!-- <dependency> -->
-		<!-- <groupId>org.apache.commons</groupId> -->
-		<!-- <artifactId>commons-lang3</artifactId> -->
-		<!-- <version>3.3.2</version> -->
-		<!-- <scope>compile</scope> -->
-		<!-- </dependency> -->
-		<!-- <dependency> -->
-		<!-- <groupId>com.fasterxml.jackson.core</groupId> -->
-		<!-- <artifactId>jackson-core</artifactId> -->
-		<!-- <version>2.5.0</version> -->
 		<!-- <scope>test</scope> -->
-		<!-- </dependency> -->
-		<!-- <dependency> -->
-		<!-- <groupId>org.mockito</groupId> -->
-		<!-- <artifactId>mockito-core</artifactId> -->
-		<!-- <version>1.10.19</version> -->
-		<!-- <scope>test</scope> -->
-		<!-- </dependency> -->
-		<!-- <dependency> -->
-		<!-- <groupId>org.hamcrest</groupId> -->
-		<!-- <artifactId>hamcrest-all</artifactId> -->
-		<!-- <version>1.3</version> -->
-		<!-- <scope>test</scope> -->
-		<!-- </dependency> -->
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
