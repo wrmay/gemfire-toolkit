@@ -18,6 +18,7 @@
 		<module>gemtoolsCommon</module>
 		<module>gemtoolsClient</module>
 		<module>gemtoolsServer</module>
+		<module>gemtoolsDist</module>
 	</modules>
 
 </project>
