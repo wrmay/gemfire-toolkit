@@ -1,5 +1,7 @@
 package io.pivotal.gemfire_addon.tools;
 
+import io.pivotal.gemfire_addon.functions.FunctionCatalog;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -25,8 +27,6 @@ import com.gemstone.gemfire.cache.execute.ResultCollector;
 import com.gemstone.gemfire.management.DistributedSystemMXBean;
 
 public class GemTouch {
-	public static String NAME = "Touch";
-	
 	private static String jmxManagerHost = null;
 	private static int jmxManagerPort = 0;
 	private static int ratePerSecond = 0;
@@ -117,7 +117,7 @@ public class GemTouch {
 		TouchAllArgs touchAllArgs = new TouchAllArgs();
 		touchAllArgs.setRatePerSecond(ratePerSecond);
 		Execution exec = FunctionService.onRegion(r).withArgs(touchAllArgs).withCollector(new LoggingResultCollector());
-		ResultCollector<String,String> results = (ResultCollector<String,String>) exec.execute(GemTouch.NAME);
+		ResultCollector<String,String> results = (ResultCollector<String,String>) exec.execute(FunctionCatalog.TOUCH_FN.toString());
 		results.getResult();
 		System.out.println("finished touch for " + r.getFullPath());	
 	}

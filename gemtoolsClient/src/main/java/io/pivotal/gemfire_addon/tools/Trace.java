@@ -1,5 +1,7 @@
 package io.pivotal.gemfire_addon.tools;
 
+import io.pivotal.gemfire_addon.functions.FunctionCatalog;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,8 +13,6 @@ import com.gemstone.gemfire.cache.execute.FunctionService;
 import com.gemstone.gemfire.cache.execute.ResultCollector;
 
 public class Trace {
-	public static String NAME = "Trace";
-		
 	private static String locatorString = null;
 	private static String regionName = null;
 	
@@ -29,7 +29,7 @@ public class Trace {
 					.withArgs(regionName)
 					.withCollector(new PrintResultCollector());
 			
-			ResultCollector coll = exec.execute(NAME);
+			ResultCollector coll = exec.execute(FunctionCatalog.TRACE_FN.toString());
 			coll.getResult();
 			
 			rc = 0;

@@ -1,5 +1,6 @@
 package io.pivotal.gemfire_addon.tools.server;
 
+import io.pivotal.gemfire_addon.functions.FunctionCatalog;
 import io.pivotal.gemfire_addon.tools.TouchAllArgs;
 
 import java.util.Arrays;
@@ -142,7 +143,7 @@ public class Touch implements Function {
 	
 	@Override
 	public String getId() {
-		return io.pivotal.gemfire_addon.tools.GemTouch.NAME;
+		return FunctionCatalog.TOUCH_FN.toString();
 	}
 
 	@Override

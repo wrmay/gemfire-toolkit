@@ -1,6 +1,8 @@
 package io.pivotal.gemfire_addon.tools.server;
 
 
+import io.pivotal.gemfire_addon.functions.FunctionCatalog;
+
 import com.gemstone.gemfire.cache.CacheFactory;
 import com.gemstone.gemfire.cache.CacheListener;
 import com.gemstone.gemfire.cache.Region;
@@ -51,7 +53,7 @@ public class Trace implements Function {
 	
 	@Override
 	public String getId() {
-		return io.pivotal.gemfire_addon.tools.Trace.NAME;
+		return FunctionCatalog.TRACE_FN.toString();
 	}
 
 	@Override
