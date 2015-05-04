@@ -35,14 +35,11 @@
 							<goal>single</goal>
 						</goals>
 						<configuration>
-							<appendAssemblyId>false</appendAssemblyId>
 							<descriptors>
 								<descriptor>assemblyClient.xml</descriptor>
 							</descriptors>
-							<finalName>gemtoolsClient-${project.version}</finalName>
 						</configuration>
 					</execution>
-					<!-- TODO
 					<execution>
 						<id>make-assembly-server</id>
 						<phase>package</phase>
@@ -50,14 +47,11 @@
 							<goal>single</goal>
 						</goals>
 						<configuration>
-							<appendAssemblyId>false</appendAssemblyId>
 							<descriptors>
 								<descriptor>assemblyServer.xml</descriptor>
 							</descriptors>
-							<finalName>gemtoolsServer-${project.version}</finalName>
 						</configuration>
 					</execution>
-					 -->
 				</executions>
 			</plugin>
 		</plugins>
