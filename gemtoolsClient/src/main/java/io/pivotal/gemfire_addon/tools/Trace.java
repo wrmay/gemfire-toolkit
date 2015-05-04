@@ -1,5 +1,7 @@
 package io.pivotal.gemfire_addon.tools;
 
+import io.pivotal.gemfire_addon.functions.FunctionCatalog;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -10,9 +12,7 @@ import com.gemstone.gemfire.cache.execute.Execution;
 import com.gemstone.gemfire.cache.execute.FunctionService;
 import com.gemstone.gemfire.cache.execute.ResultCollector;
 
-public class Untrace {
-	public static String NAME = "Untrace";
-		
+public class Trace {
 	private static String locatorString = null;
 	private static String regionName = null;
 	
@@ -29,7 +29,7 @@ public class Untrace {
 					.withArgs(regionName)
 					.withCollector(new PrintResultCollector());
 			
-			ResultCollector coll = exec.execute(NAME);
+			ResultCollector coll = exec.execute(FunctionCatalog.TRACE_FN.toString());
 			coll.getResult();
 			
 			rc = 0;
@@ -78,6 +78,6 @@ public class Untrace {
 	}
 	
 	private static void printUsage(){
-		System.err.println("usage: untrace locator-host[port] region-name");
+		System.err.println("usage: trace locator-host[port] region-name");
 	}
  }

@@ -11,12 +11,15 @@
 	<dependencySets>
 		<dependencySet>
 			<outputDirectory>lib</outputDirectory>
+			<excludes>
+            	<exclude>${project.groupId}:gemtoolsServer</exclude>
+          	</excludes>
 		</dependencySet>
 	</dependencySets>
 	<fileSets>
 		<fileSet>
 			<fileMode>775</fileMode>
-			<directory>scripts</directory>
+			<directory>../scripts</directory>
 			<includes>
 				<include>*.*</include>
 			</includes>
@@ -25,7 +28,7 @@
 	</fileSets>
 	<files>
 		<file>
-			<source>README.md</source>
+			<source>../README.md</source>
 			<outputDirectory>.</outputDirectory>
 		</file>
 	</files>

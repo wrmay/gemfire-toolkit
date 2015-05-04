@@ -1,6 +1,8 @@
 package io.pivotal.gemfire_addon.tools.server;
 
 
+import io.pivotal.gemfire_addon.functions.FunctionCatalog;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,7 +62,7 @@ public class Untrace implements Function {
 	
 	@Override
 	public String getId() {
-		return io.pivotal.gemfire_addon.tools.Untrace.NAME;
+		return FunctionCatalog.UNTRACE_FN.toString();
 	}
 
 	@Override

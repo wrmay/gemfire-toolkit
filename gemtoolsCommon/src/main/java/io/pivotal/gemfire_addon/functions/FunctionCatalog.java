@@ -6,7 +6,10 @@ package io.pivotal.gemfire_addon.functions;
  */
 public enum FunctionCatalog {
 	PARALLEL_EXPORT_FN ("ADPParallelExport"),
-	PARALLEL_IMPORT_FN ("ADPParallelImport");
+	PARALLEL_IMPORT_FN ("ADPParallelImport"),
+	TOUCH_FN		   ("Touch"),
+	TRACE_FN		   ("Trace"),
+	UNTRACE_FN		   ("Untrace");
 	
 	private String s;
 	
