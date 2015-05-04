@@ -19,7 +19,15 @@
 	<fileSets>
 		<fileSet>
 			<fileMode>775</fileMode>
-			<directory>../scripts</directory>
+			<directory>../src/main/resources</directory>
+			<includes>
+				<include>*.*</include>
+			</includes>
+			<outputDirectory>lib</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<fileMode>775</fileMode>
+			<directory>../src/main/scripts</directory>
 			<includes>
 				<include>*.*</include>
 			</includes>
