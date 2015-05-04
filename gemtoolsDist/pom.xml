@@ -27,19 +27,37 @@
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>2.5.4</version>
-				<configuration>
-					<descriptors>
-						<descriptor>assembly.xml</descriptor>
-					</descriptors>
-				</configuration>
 				<executions>
 					<execution>
-						<id>make-assembly</id> <!-- this is used for inheritance merges -->
-						<phase>package</phase> <!-- bind to the packaging phase -->
+						<id>make-assembly-client</id>
+						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
 						</goals>
+						<configuration>
+							<appendAssemblyId>false</appendAssemblyId>
+							<descriptors>
+								<descriptor>assemblyClient.xml</descriptor>
+							</descriptors>
+							<finalName>gemtoolsClient-${project.version}</finalName>
+						</configuration>
 					</execution>
+					<!-- TODO
+					<execution>
+						<id>make-assembly-server</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<appendAssemblyId>false</appendAssemblyId>
+							<descriptors>
+								<descriptor>assemblyServer.xml</descriptor>
+							</descriptors>
+							<finalName>gemtoolsServer-${project.version}</finalName>
+						</configuration>
+					</execution>
+					 -->
 				</executions>
 			</plugin>
 		</plugins>

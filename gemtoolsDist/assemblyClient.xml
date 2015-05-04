@@ -11,37 +11,15 @@
 	<dependencySets>
 		<dependencySet>
 			<outputDirectory>lib</outputDirectory>
-          	<excludes>
-            	<exclude>${project.groupId}:*:*</exclude>
+			<excludes>
+            	<exclude>${project.groupId}:gemtoolsServer</exclude>
           	</excludes>
 		</dependencySet>
 	</dependencySets>
-	<!-- 
-<dependencySets>
-    <dependencySet>
-          		<useTransitiveDependencies>true</useTransitiveDependencies>
-          <useProjectArtifact>false</useProjectArtifact>
-          <unpack>false</unpack>
-      </dependencySet>
-  </dependencySets>
-	-->
-	<moduleSets>
-    		<moduleSet>
-      			<!-- <useAllReactorProjects>true</useAllReactorProjects> -->
-      			<includes>
-        			<include>${project.groupId}:gemtoolsClient:${project.version}</include>
-      			</includes>
-      			<binaries>
-        			<outputDirectory>lib</outputDirectory>
-        			<unpack>false</unpack>
-      			</binaries>
-    		</moduleSet>
-	</moduleSets>
-	<!-- 
 	<fileSets>
 		<fileSet>
 			<fileMode>775</fileMode>
-			<directory>scripts</directory>
+			<directory>../scripts</directory>
 			<includes>
 				<include>*.*</include>
 			</includes>
@@ -54,6 +32,5 @@
 			<outputDirectory>.</outputDirectory>
 		</file>
 	</files>
-	 -->
 
 </assembly>
