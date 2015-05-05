@@ -3,6 +3,8 @@
  "http://www.gemstone.com/dtd/cache8_0.dtd">
 <client-cache>
 
+	<!-- Fix? : Pool is specified in metadata so has to be preset on all clients -->
+	 
     <pool name="myPool" subscription-enabled="true">
         <locator host="${LOCATOR_1_HOST}" port="${LOCATOR_1_PORT}"/>
         <locator host="${LOCATOR_2_HOST}" port="${LOCATOR_2_PORT}"/>

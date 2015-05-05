@@ -18,7 +18,7 @@
 	
 	<!-- TODO: Make these submodules of this project? -->
   	<adp-dynamic-region-management.version>0.3.5-SNAPSHOT</adp-dynamic-region-management.version>
-  	<titanium-gemfire-security.version>0.3.2-SNAPSHOT</titanium-gemfire-security.version>
+  	<titanium-gemfire-security.version>1.0.2-SNAPSHOT</titanium-gemfire-security.version>
   </properties>
   
 	<repositories>
