@@ -203,6 +203,11 @@ All arguments to the `remoteExport.py` have the same meaning as for `localExport
 2. The import/export utility only supports dynamically created regions, in this version.
 3. Local import can timeout if it takes too long for the servers to respond for which data is available.
 
+#TODO
+1. Implement `remoteImport.py` to complement `remoteExport.py`
+2. Extend export to include regions not dynamically defined
+
+
 
 
 
