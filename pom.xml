@@ -3,14 +3,14 @@
 
 	<groupId>io.pivotal.gemfire_addon</groupId>
 	<artifactId>gemtools</artifactId>
-	<version>0.5.2</version>
+	<version>0.5.3-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>gemtools</name>
 
 	<scm>
 	  <connection>${gemtools.scm.url}</connection>
-  	  <tag>gemtools-0.5.2</tag>
+  	  <tag>HEAD</tag>
   	</scm>
 
 	<modules>
