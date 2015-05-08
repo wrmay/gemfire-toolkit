@@ -3,19 +3,22 @@
   <parent>
   	<groupId>io.pivotal.gemfire_addon</groupId>
   	<artifactId>gemtools</artifactId>
-  	<version>0.5-SNAPSHOT</version>
+  	<version>0.5.3-SNAPSHOT</version>
   	<relativePath>..</relativePath>
   </parent>
   <artifactId>gemtoolsPom</artifactId>
   <packaging>pom</packaging>
   
   <properties>
-  	<gemfire.version>8.1.0</gemfire.version>
+    <!--  Client must be 8.0 until all clusters upgraded -->
+  	<gemfire.version>8.0.0</gemfire.version>
+  	<!--  Use same version as Gemfire bundles -->
+  	<log4j2.version>2.1</log4j2.version>
   	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	
 	<!-- TODO: Make these submodules of this project? -->
-  	<adp-dynamic-region-management.version>0.3.5-SNAPSHOT</adp-dynamic-region-management.version>
-  	<titanium-gemfire-security.version>0.3.2-SNAPSHOT</titanium-gemfire-security.version>
+  	<adp-dynamic-region-management.version>0.3.6</adp-dynamic-region-management.version>
+  	<titanium-gemfire-security.version>1.0.1-SNAPSHOT</titanium-gemfire-security.version>
   </properties>
   
 	<repositories>
@@ -66,6 +69,12 @@
   			<groupId>com.adp.titanium</groupId>
   			<artifactId>titanium-gemfire-security</artifactId>
   			<version>${titanium-gemfire-security.version}</version>
+  		</dependency>
+
+  		<dependency>
+  			<groupId>org.apache.logging.log4j</groupId>
+  			<artifactId>log4j-core</artifactId>
+  			<version>${log4j2.version}</version>
   		</dependency>
 		
 		<!-- <scope>test</scope> -->

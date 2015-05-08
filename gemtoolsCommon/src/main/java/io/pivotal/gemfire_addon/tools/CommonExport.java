@@ -65,7 +65,7 @@ public abstract class CommonExport extends CommonExportImport {
 				 * making it easier for any script to parse, to then
 				 * copy the files to a different location
 				 */
-				LOGGER.debug("host,{},server,{},directory,{},file,{}", 
+				LOGGER.info("host,{},server,{},directory,{},file,{}", 
 						result.getHostName(),result.getMemberName(),result.getFileDir(),result.getFileName());
 				recordsWritten += result.getRecordsWritten();
 			}
@@ -122,8 +122,9 @@ public abstract class CommonExport extends CommonExportImport {
 			}			
 						
 			long localEndTime = System.currentTimeMillis();
-			LOGGER.info("Export ends: Region {}: {} records exported in {}ms to file '{}'", 
-					region.getFullPath(), exportResponse.getRecordsWritten(), (localEndTime - localStartTime), exportResponse.getFileName());
+			LOGGER.info("Export ends: Region {}: {} records exported in {}ms to file '{}{}{}'", 
+					region.getFullPath(), exportResponse.getRecordsWritten(), (localEndTime - localStartTime), 
+					exportResponse.getFileDir(), FILE_SEPARATOR, exportResponse.getFileName());
 
 		} catch (Exception e) {
 			LOGGER.error("Fail for " + region.getFullPath(), e);

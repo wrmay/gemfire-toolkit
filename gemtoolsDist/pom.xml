@@ -3,7 +3,7 @@
   <parent>
   	<groupId>io.pivotal.gemfire_addon</groupId>
   	<artifactId>gemtools</artifactId>
-  	<version>0.5-SNAPSHOT</version>
+  	<version>0.5.3-SNAPSHOT</version>
   	<relativePath>..</relativePath>
   </parent>
   <artifactId>gemtoolsDist</artifactId>
