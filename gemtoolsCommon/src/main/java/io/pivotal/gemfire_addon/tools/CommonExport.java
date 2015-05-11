@@ -8,6 +8,7 @@ import io.pivotal.gemfire_addon.types.ExportResponse;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +45,7 @@ public abstract class CommonExport extends CommonExportImport {
 	public List<ExportResponse> exportRegionFunction(Region<?, ?> region,
 			long timestamp, ExportFileType exportFileType) {
 
-		Object args = new Long(timestamp);
+		Object args = Long.valueOf(timestamp);
 		Execution execution = FunctionService.onRegion(region).withArgs(args);
 		ResultCollector<?, ?> resultsCollector = execution.execute(FunctionCatalog.PARALLEL_EXPORT_FN.toString());
 		List<ExportResponse> results = null;
@@ -241,7 +242,7 @@ public abstract class CommonExport extends CommonExportImport {
 			dataOutputStream.write(AdpExportRecordType.HEADER.getB());
 			String header = String.format("#SOF,%d,%s%s", 
 					startTime, regionPath, System.lineSeparator());
-			dataOutputStream.write(header.getBytes());
+			dataOutputStream.write(header.getBytes(StandardCharsets.UTF_8));
 		}
 	}
 
@@ -256,13 +257,13 @@ public abstract class CommonExport extends CommonExportImport {
 			String hintKey = String.format("#HINT,KEY,%s%s", 
 					key.getClass().getCanonicalName(),
 					System.lineSeparator());
-			dataOutputStream.write(hintKey.getBytes());
+			dataOutputStream.write(hintKey.getBytes(StandardCharsets.UTF_8));
 
 			dataOutputStream.write(AdpExportRecordType.HINT_VALUE.getB());
 			String hintValue = String.format("#HINT,VALUE,%s%s", 
 					(value==null?"":value.getClass().getCanonicalName()),
 					System.lineSeparator());
-			dataOutputStream.write(hintValue.getBytes());
+			dataOutputStream.write(hintValue.getBytes(StandardCharsets.UTF_8));
 		}
 	}
 
@@ -270,7 +271,7 @@ public abstract class CommonExport extends CommonExportImport {
 		if(exportFileType==ExportFileType.ADP_DEFAULT_FORMAT) {
 			dataOutputStream.write(AdpExportRecordType.FOOTER.getB());
 			String footer = String.format("#EOF%s", System.lineSeparator());
-			dataOutputStream.write(footer.getBytes());
+			dataOutputStream.write(footer.getBytes(StandardCharsets.UTF_8));
 		}
 	}
 }

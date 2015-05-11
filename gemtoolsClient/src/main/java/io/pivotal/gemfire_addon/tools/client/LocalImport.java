@@ -116,8 +116,7 @@ public class LocalImport extends CommonImport {
 		}
 		
 		String suffix = tokens[tokens.length - 1];
-		@SuppressWarnings("unused")
-		String timestamp = tokens[tokens.length - 2];
+		//String timestamp = tokens[tokens.length - 2];
 		// The region name is the prefix, but can contain the dot character itself
 		StringBuffer sb = new StringBuffer("");
 		for(int i=0 ; i < (tokens.length-2) ; i++) {

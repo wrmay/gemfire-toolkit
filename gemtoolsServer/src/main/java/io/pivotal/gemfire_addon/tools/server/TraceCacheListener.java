@@ -71,8 +71,7 @@ public class TraceCacheListener implements CacheListener<Object, Object> {
 		message("updated key " +  format(entryEvent.getKey()) + " in " + regionName  , entryEvent );
 	}
 
-	private void message(String msg, CacheEvent event){
-		DistributedMember member = event.getDistributedMember();
+	private void message(String msg, CacheEvent<Object, Object> event){
 		log.info("TRACE: " +  msg);
 	}
 	

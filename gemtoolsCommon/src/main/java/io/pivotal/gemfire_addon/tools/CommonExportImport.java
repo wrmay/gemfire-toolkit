@@ -15,8 +15,9 @@ public abstract class CommonExportImport {
 	protected static final String     	FILE_SEPARATOR = System.getProperty("file.separator");
 	
 	// Size limit for collection handling for getAll()/putAll()
-	protected static int 				BLOCK_SIZE=-1;
-	protected static final int 			DEFAULT_BLOCK_SIZE=1000;
+	private   static int 				BLOCK_SIZE=-1;
+	private	  static final int 			DEFAULT_BLOCK_SIZE=1000;
+	
 	protected static Logger 			LOGGER = null;
 
 	/* Expecting exactly two locators, formatted as "host:port,host:port" or

@@ -15,6 +15,7 @@
   	<!--  Use same version as Gemfire bundles -->
   	<log4j2.version>2.1</log4j2.version>
   	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  	<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	
 	<!-- TODO: Make these submodules of this project? -->
   	<adp-dynamic-region-management.version>0.3.6</adp-dynamic-region-management.version>
@@ -47,6 +48,22 @@
 					<target>1.7</target>
 				</configuration>
 			</plugin>
+			
+			<!--
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<phase>compile</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			  -->
 		</plugins>
 	</build>
 

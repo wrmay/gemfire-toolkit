@@ -6,6 +6,7 @@ import io.pivotal.gemfire_addon.types.ImportResponse;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,7 +22,7 @@ import com.gemstone.gemfire.pdx.PdxInstance;
  *
  */
 public abstract class CommonImport extends CommonExportImport {
-	private static final byte       EOL = System.lineSeparator().getBytes()[0];
+	private static final byte       EOL = System.lineSeparator().getBytes(StandardCharsets.UTF_8)[0];
 	private Class<?> 				keyClass = null;
 	private Class<?>				valueClass = null;
 

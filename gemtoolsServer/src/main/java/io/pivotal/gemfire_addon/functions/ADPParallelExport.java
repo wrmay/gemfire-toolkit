@@ -75,7 +75,7 @@ import com.gemstone.gemfire.cache.partition.PartitionRegionHelper;
  */
 public class ADPParallelExport extends CommonExport implements Declarable, Function {
 	private static final long serialVersionUID = 1L;
-	private Cache cache = null;
+	private transient Cache cache = null;
 
 	/*  As this function will run on multiple members in parallel for a partitioned region,
 	 * expect a single java.lang.Long as an argument to use as a co-ordinated timestamp

@@ -83,7 +83,7 @@ import com.gemstone.gemfire.cache.execute.RegionFunctionContext;
  */
 public class ADPParallelImport extends CommonImport implements Declarable, Function {
 	private static final long serialVersionUID = 1L;
-	private Cache cache = null;
+	private transient Cache cache = null;
 
 	@SuppressWarnings("unchecked")
 	public void execute(final FunctionContext functionContext) {
