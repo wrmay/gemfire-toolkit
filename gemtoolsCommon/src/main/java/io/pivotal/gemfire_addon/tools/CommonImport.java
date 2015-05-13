@@ -27,19 +27,45 @@ public abstract class CommonImport extends CommonExportImport {
 	private Class<?>				valueClass = null;
 
 	protected ImportResponse importRegion(Region<?, ?> region, String fileDir,
-			String fileName) {
-		// TODO Auto-generated method stub
-		return null;
+			String fileName) throws Exception {
+
+		this.validateFileName(fileName);
+		
+		String target;
+		if(fileDir==null || fileDir.length()==0) {
+			target = fileName;
+		} else {
+			target = fileDir + System.getProperty("file.separator","/") + fileName;
+		}
+		
+		File file = new File(target);
+				
+		return this.importRegionFromAdpFormatFile(file,region);
 	}
 
-	protected void importRegionFromAdpFormatFile(File file, Region<?, ?> region) throws Exception {
+	private void validateFileName(String fileName) throws Exception {
+		if(fileName==null) {
+			throw new RuntimeException("filename cannot be null");
+		}
+		
+		if(fileName.length()==0) {
+			throw new RuntimeException("filename cannot be empty");
+		}
+	}
+
+	protected ImportResponse importRegionFromAdpFormatFile(File file, Region<?, ?> region) throws Exception {
+		ImportResponse importResponse = new ImportResponse();
+		
+		importResponse.setFile(file);
+		importResponse.setFileDir(file.getParent()==null?"":file.getParent());
+		importResponse.setFileName(file.getName()==null?"":file.getName());
+		
 		try {
 			LOGGER.info("Import begins: Region {}", region.getFullPath());
 			LOGGER.trace("Input file {}", file.getPath());
 			
 			long localStartTime = System.currentTimeMillis();
 			
-			int recordCount=0;
 			try (	FileInputStream fileInputStream = new FileInputStream(file);
 					DataInputStream dataInputStream = new DataInputStream(fileInputStream);
 					) {
@@ -51,23 +77,26 @@ public abstract class CommonImport extends CommonExportImport {
 				nextByte = this.firstRecordHintAdpFormatKey(dataInputStream, file.getName(), nextByte);
 				nextByte = this.firstRecordHintAdpFormatValue(dataInputStream, file.getName(), nextByte);
 				
-				recordCount = this.readRecordsAdpFormat(dataInputStream, keyClass, valueClass, region, recordCount, file.getName(), nextByte);
+				this.readRecordsAdpFormat(dataInputStream, keyClass, valueClass, region, importResponse, file.getName(), nextByte);
 			}			
 						
 			long localEndTime = System.currentTimeMillis();
 			LOGGER.info("Import ends: Region {}: {} records imported in {}ms from file '{}'", 
-					region.getFullPath(), recordCount, (localEndTime - localStartTime), file.getName());
+					region.getFullPath(), importResponse.getRecordsWritten(), (localEndTime - localStartTime), file.getName());
 
 		} catch (Exception e) {
 			LOGGER.error("Fail for " + region.getFullPath(), e);
 		}
+		
+		return importResponse;
 	}
 
-	private int readRecordsAdpFormat(DataInputStream dataInputStream, 
+	private void readRecordsAdpFormat(DataInputStream dataInputStream, 
 			Class<?> keyClass, Class<?> valueClass,
-			Region<?, ?> region, int writeCount, String filename, byte nextByte) throws Exception {
+			Region<?, ?> region, ImportResponse importResponse, String filename, byte nextByte) throws Exception {
 		int blockSize = getBlockSize();
 		int readCount=0;
+		int writeCount=0;
 		
 		Map<?,?> entries = new HashMap<>(blockSize);
 		while(nextByte==AdpExportRecordType.DATA.getB()) {
@@ -86,7 +115,8 @@ public abstract class CommonImport extends CommonExportImport {
 		}
 				
 		this.endFileAdpFormat(dataInputStream,filename, nextByte);
-		return writeCount;
+		importResponse.setRecordsRead(readCount);
+		importResponse.setRecordsWritten(writeCount);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

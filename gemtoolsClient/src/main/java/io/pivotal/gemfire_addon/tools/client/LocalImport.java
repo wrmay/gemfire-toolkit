@@ -1,15 +1,12 @@
 package io.pivotal.gemfire_addon.tools.client;
 
-import io.pivotal.gemfire_addon.tools.CommonImport;
-import io.pivotal.gemfire_addon.tools.client.utils.Bootstrap;
 import io.pivotal.gemfire_addon.types.ExportFileType;
+import io.pivotal.gemfire_addon.types.ImportRequest;
 
 import java.io.File;
-
-import org.apache.logging.log4j.LogManager;
+import java.util.List;
 
 import com.gemstone.gemfire.cache.Region;
-import com.gemstone.gemfire.cache.client.ClientCache;
 
 /**
  * <P>A simple version of import functionality, complementary to GFSH's "{@code import data}".
@@ -49,74 +46,59 @@ import com.gemstone.gemfire.cache.client.ClientCache;
  * <P>The second and any subsequent arguments list the files to be imported.
  * </P>
  */
-public class LocalImport extends CommonImport {
-	private static boolean			error = false;
-	private static ClientCache 		clientCache = null;
-	private static final long 		globalStartTime = System.currentTimeMillis();
+public class LocalImport extends DataImport {
 
-
-	public static void main(String[] args) throws Exception {
+	public static void main(final String[] args) throws Exception {
 		new LocalImport().process(args);
 		System.exit(error?1:0);
 	}
 
-	private void usage() {
+	protected void usage() {
 		System.err.println(this.getClass().getSimpleName() + ": usage: " + this.getClass().getSimpleName()
 				+ " <locators> file [file] [file]...");
 	}
 	
-	protected void process(final String[] args) throws Exception {
-		int fileCount=0;
-		
-		if(args==null || args.length<2) {
-			this.usage();
-			error=true;
-			return;
-		}
-		
-		parseLocators(args[0]);
-
-		clientCache = Bootstrap.createDynamicCache();
-		LOGGER = LogManager.getLogger(this.getClass());
-		LOGGER.info("Import begins:");
-
-		for(int i=1; i<args.length;i++) {
-			try {
-				if(args[i]!=null&&args[i].length()>0) {
-					importFile(args[i]);
-					fileCount += 1;
-				}
-			} catch (Exception e) {
-				LOGGER.error("File '" + args[i] + "'", e);
-				error=true;
-			}
-		}
-		
-		long globalEndTime = System.currentTimeMillis();
-		LOGGER.info("Import ends: {} files imported in {}ms", fileCount, (globalEndTime - globalStartTime));
-	}
-
-	
-	/* Import a file to a region with the same name.
-	 */
-	private void importFile(final String arg) throws Exception {
+	protected ImportRequest importRequest(final String arg) throws Exception {
 		File file = new File(arg);
 		
 		if(!file.exists() || !file.canRead()) {
 			throw new Exception("File '" + arg + "' cannot be read");
 		}
 		
-		String filename = file.getName();
+		ImportRequest importRequest = new ImportRequest();
+		
+		importRequest.setFile(file);
+		importRequest.setFileDir(file.getPath());
+		importRequest.setFileName(file.getName());
+		
+		this.validateFileName(importRequest.getFileName());
+		
+		return importRequest;
+	}
 
+	/* Local import, so iterate through the list
+	 */
+	protected void processImportRequestList(final List<ImportRequest> importRequestList) throws Exception {
+		for(ImportRequest importRequest : importRequestList) {
+			LOGGER.debug("Start import of '{}'", importRequest.getFile().getAbsoluteFile());
+			this.processImportRequest(importRequest);
+			LOGGER.debug("End import of '{}'", importRequest.getFile().getAbsoluteFile());
+		}
+	}
+
+		
+	/* Import a file to a region with the same name.
+	 */
+	private void processImportRequest(final ImportRequest importRequest) throws Exception {
+		
 		// Parse filename back into region name
-		String[] tokens = filename.split("\\.");
+		String[] tokens = importRequest.getFileName().split("\\.");
 		if(tokens.length<3) {
 			error=true;
-			throw new Exception("File name '" + arg + "' not valid, needs region name, timestamp and format");
+			throw new Exception("File name '" + importRequest.getFile().getAbsoluteFile() + "' not valid, needs region name, timestamp and format");
 		}
 		
 		String suffix = tokens[tokens.length - 1];
-		//String timestamp = tokens[tokens.length - 2];
 		// The region name is the prefix, but can contain the dot character itself
 		StringBuffer sb = new StringBuffer("");
 		for(int i=0 ; i < (tokens.length-2) ; i++) {
@@ -127,23 +109,22 @@ public class LocalImport extends CommonImport {
 		}
 		String regionName = sb.toString();
 		
-
 		if(regionName.charAt(0)==Region.SEPARATOR_CHAR) {
 			regionName = regionName.substring(1);
 		}
 		
 		if(regionName.indexOf(Region.SEPARATOR_CHAR)>=0) {
 			error=true;
-			throw new Exception("Region name '" + arg + "' not valid, subregions are not yet supported");
+			throw new Exception("Region name '" + importRequest.getFile().getAbsoluteFile() + "' not valid, subregions are not yet supported");
 		}
 		
 		// Disallow deliberate attempts to overwrite system data, such as system users.
 		if(regionName.startsWith("__")) {
 			error=true;
-			throw new Exception("Region name '" + arg + "' not valid, system regions beginning '__' may not be imported");
+			throw new Exception("Region name '" + importRequest.getFile().getAbsoluteFile() + "' not valid, system regions beginning '__' may not be imported");
 		}
 		
-		importRegion(file, regionName, suffix);
+		importRegion(importRequest.getFile(), regionName, suffix);
 	}
 	
 
@@ -163,5 +144,4 @@ public class LocalImport extends CommonImport {
 		
 	}
 
-	
 }
