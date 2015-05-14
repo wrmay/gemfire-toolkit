@@ -9,6 +9,7 @@ public class ImportRequest implements Serializable {
 	private transient File file;
 	private String  fileDir;
 	private String	fileName;
+	private String  regionName;
 	private String	member;
 	
 	public File getFile() {
@@ -29,6 +30,12 @@ public class ImportRequest implements Serializable {
 	public void setFileName(String fileName) {
 		this.fileName = fileName;
 	}
+	public String getRegionName() {
+		return regionName;
+	}
+	public void setRegionName(String regionName) {
+		this.regionName = regionName;
+	}
 	public String getMember() {
 		return member;
 	}
@@ -38,7 +45,7 @@ public class ImportRequest implements Serializable {
 	@Override
 	public String toString() {
 		return "ImportRequest [fileDir=" + fileDir + ", fileName=" + fileName
-				+ ", member=" + member + "]";
+				+ ", regionName=" + regionName + ", member=" + member + "]";
 	}
-
+	
 }

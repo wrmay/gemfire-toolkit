@@ -71,7 +71,7 @@ public class LocalImport extends DataImport {
 		importRequest.setFileDir(file.getPath());
 		importRequest.setFileName(file.getName());
 		
-		this.validateFileName(importRequest.getFileName());
+		importRequest.setRegionName(this.extractRegionName(importRequest.getFileName()));
 		
 		return importRequest;
 	}
@@ -129,6 +129,8 @@ public class LocalImport extends DataImport {
 	
 
 	private void importRegion(File file, String regionName, String suffix) throws Exception {
+		String NO_HOST=null;
+		String NO_MEMBER=null;
 
 		Region<?,?> region = clientCache.getRegion(regionName);
 		if(region==null) {
@@ -137,7 +139,7 @@ public class LocalImport extends DataImport {
 		}
 
 		if(suffix.equalsIgnoreCase(ExportFileType.ADP_DEFAULT_FORMAT.toString())) {
-			importRegionFromAdpFormatFile(file,region);
+			importRegionFromAdpFormatFile(file,region,NO_HOST,NO_MEMBER);
 		} else {
 			throw new Exception("Export type not supported yet: '" + suffix + "'");
 		}

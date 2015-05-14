@@ -1,8 +1,13 @@
 package io.pivotal.gemfire_addon.tools.client;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import com.gemstone.gemfire.cache.Region;
 
 import io.pivotal.gemfire_addon.types.ImportRequest;
+import io.pivotal.gemfire_addon.types.ImportResponse;
 
 /**
  *TODO
@@ -30,7 +35,6 @@ public class RemoteImport extends DataImport {
 		}
 		
 		importRequest.setMember(tokens[0]);
-		this.validateFileName(tokens[1]);
 		
 		int lastDir = tokens[1].lastIndexOf(fileSeparator);
 		
@@ -41,15 +45,41 @@ public class RemoteImport extends DataImport {
 			importRequest.setFileDir(tokens[1].substring(0, lastDir));
 			importRequest.setFileName(tokens[1].substring(lastDir + 1));
 		}
-		
+
+		importRequest.setRegionName(this.extractRegionName(importRequest.getFileName()));
+
 		return importRequest;
 	}
 
 	/* Remote import, so send the list to the servers
 	 */
-	protected void processImportRequestList(final List<ImportRequest> importRequest) throws Exception {
-		
-		//FIXME Add function call
+	protected void processImportRequestList(final List<ImportRequest> importRequestList) throws Exception {
+
+		// Do each region in the request list once
+		Set<String> regionNames = new TreeSet<>();
+		for(ImportRequest nextImportRequest : importRequestList) {
+			
+			String regionName = nextImportRequest.getRegionName();
+					
+			if(!regionNames.contains(regionName)) {
+				regionNames.add(regionName);
+				
+				List<ImportRequest> importRequestSubset = new ArrayList<>();
+				for(ImportRequest possibleImportRequest : importRequestList) {
+					if(regionName.equals(possibleImportRequest.getRegionName())) {
+						importRequestSubset.add(possibleImportRequest);
+					}
+				}
+				
+				Region<?,?> region = clientCache.getRegion(regionName);
+				if(region!=null) {
+					this.importRegionFunction(region, importRequestSubset);
+				} else {
+					throw new Exception("Region '" + regionName + "' not found in client cache");
+				}
+			}
+			
+		}
 		
 	}
 

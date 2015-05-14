@@ -62,13 +62,23 @@ public abstract class DataImport extends CommonImport {
 
 	protected abstract ImportRequest importRequest(final String arg) throws Exception;
 	
-	protected void validateFileName(final String filename) throws Exception {
+	protected String extractRegionName(final String filename) throws Exception {
 		// Parse filename back into region name
 		String[] tokens = filename.split("\\.");
 		if(tokens.length<3) {
 			error=true;
 			throw new Exception("File name '" + filename + "' not valid, needs region name, timestamp and format");
 		}
+		
+		StringBuffer sb = new StringBuffer();
+		for(int i=0; i< tokens.length-2 ; i++) {
+			if(i!=0) {
+				sb.append(".");
+			}
+			sb.append(tokens[i]);
+		}
+		
+		return sb.toString();
 	}
 	
 	protected abstract void processImportRequestList(final List<ImportRequest> importRequest) throws Exception;

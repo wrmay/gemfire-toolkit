@@ -1,17 +1,25 @@
 package io.pivotal.gemfire_addon.tools;
 
+import io.pivotal.gemfire_addon.functions.FunctionCatalog;
 import io.pivotal.gemfire_addon.types.AdpExportRecordType;
+import io.pivotal.gemfire_addon.types.ImportRequest;
 import io.pivotal.gemfire_addon.types.ImportResponse;
 
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.gemstone.gemfire.DataSerializer;
 import com.gemstone.gemfire.cache.Region;
+import com.gemstone.gemfire.cache.execute.Execution;
+import com.gemstone.gemfire.cache.execute.FunctionService;
+import com.gemstone.gemfire.cache.execute.ResultCollector;
 import com.gemstone.gemfire.pdx.JSONFormatter;
 import com.gemstone.gemfire.pdx.PdxInstance;
 
@@ -26,8 +34,54 @@ public abstract class CommonImport extends CommonExportImport {
 	private Class<?> 				keyClass = null;
 	private Class<?>				valueClass = null;
 
-	protected ImportResponse importRegion(Region<?, ?> region, String fileDir,
-			String fileName) throws Exception {
+	@SuppressWarnings("unchecked")
+	protected List<ImportResponse> importRegionFunction(Region<?, ?> region, List<ImportRequest> args) {
+		
+		Execution execution = FunctionService.onRegion(region).withArgs(args);
+		ResultCollector<?, ?> resultsCollector = execution.execute(FunctionCatalog.PARALLEL_IMPORT_FN.toString());
+		List<ImportResponse> results = new ArrayList<>();
+
+		try {
+			LOGGER.info("Import begins: Region {}", region.getFullPath());
+			
+			long localStartTime = System.currentTimeMillis();
+
+			List<List<ImportResponse>> outerList = (List<List<ImportResponse>>) resultsCollector.getResult();
+			for(List<ImportResponse> innerList : outerList) {
+				for(ImportResponse item : innerList) {
+					results.add(item);
+				}
+			}
+			
+			Collections.sort(results);
+			
+			long localEndTime = System.currentTimeMillis();
+
+			int recordsWritten=0;
+			for(ImportResponse result : results) {
+				/* Log the details of which files are where in CSV format,
+				 * making it easier for any script to parse, to then
+				 * copy the files to a different location
+				 */
+				LOGGER.info("host,{},server,{},directory,{},file,{}", 
+						result.getHostName(),result.getMemberName(),result.getFileDir(),result.getFileName());
+				recordsWritten += result.getRecordsWritten();
+			}
+			
+			LOGGER.info("Import ends: Region {}: {} records imported in {}ms", 
+					region.getFullPath(), recordsWritten, (localEndTime - localStartTime));
+		
+		} catch (Exception e) {
+			LOGGER.error("Fail for " + region.getFullPath(), e);
+
+		}
+
+		return results;
+	}
+	
+	
+	protected ImportResponse importRegion(final Region<?, ?> region, final String fileDir,
+			final String fileName, final String member, final String host) throws Exception {
 
 		this.validateFileName(fileName);
 		
@@ -40,7 +94,7 @@ public abstract class CommonImport extends CommonExportImport {
 		
 		File file = new File(target);
 				
-		return this.importRegionFromAdpFormatFile(file,region);
+		return this.importRegionFromAdpFormatFile(file,region, member, host);
 	}
 
 	private void validateFileName(String fileName) throws Exception {
@@ -53,12 +107,14 @@ public abstract class CommonImport extends CommonExportImport {
 		}
 	}
 
-	protected ImportResponse importRegionFromAdpFormatFile(File file, Region<?, ?> region) throws Exception {
+	protected ImportResponse importRegionFromAdpFormatFile(File file, Region<?, ?> region, final String member, final String host) throws Exception {
 		ImportResponse importResponse = new ImportResponse();
 		
 		importResponse.setFile(file);
 		importResponse.setFileDir(file.getParent()==null?"":file.getParent());
 		importResponse.setFileName(file.getName()==null?"":file.getName());
+		importResponse.setMemberName(member==null?"":member);
+		importResponse.setHostName(host==null?"":host);
 		
 		try {
 			LOGGER.info("Import begins: Region {}", region.getFullPath());
