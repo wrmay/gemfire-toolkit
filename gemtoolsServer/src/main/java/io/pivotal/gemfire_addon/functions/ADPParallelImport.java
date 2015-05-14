@@ -108,12 +108,12 @@ public class ADPParallelImport extends CommonImport implements Declarable, Funct
 			List<ImportResponse> results = new ArrayList<>();
 			for(ImportRequest importRequest : (List<ImportRequest>)args) {
 				if(myName.equalsIgnoreCase(importRequest.getMember())) {
-					LOGGER.error("Starting import of {}", importRequest.getFileName());//FIXME Change to trace
+					LOGGER.debug("Starting import of {}", importRequest.getFileName());
 					ImportResponse importResponse = this.importRegion(region, importRequest.getFileDir(), importRequest.getFileName(), myName, myHost);
-					LOGGER.error("Completed import of {} as {}", importRequest.getFileName(), importResponse);//FIXME Change to trace
+					LOGGER.debug("Completed import of {} as {}", importRequest.getFileName(), importResponse);
 					results.add(importResponse);
 				} else {
-					LOGGER.error("Ignoring import of {} for {}", importRequest.getFileName(), importRequest.getMember());//FIXME Change to trace
+					LOGGER.trace("Ignoring import of {} for {}", importRequest.getFileName(), importRequest.getMember());
 				}
 				
 			}

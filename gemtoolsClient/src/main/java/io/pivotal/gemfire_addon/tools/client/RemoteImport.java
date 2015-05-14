@@ -7,10 +7,52 @@ import java.util.TreeSet;
 import com.gemstone.gemfire.cache.Region;
 
 import io.pivotal.gemfire_addon.types.ImportRequest;
-import io.pivotal.gemfire_addon.types.ImportResponse;
 
 /**
- *TODO
+ * <P>The paralle version of import functionality, complementary to GFSH's "{@code import data}".
+ * This works with files produced by {@link io.pivotal.gemfire_addon.tools.client.LocalExport}
+ * or {@link io.pivotal.gemfire_addon.tools.client.RemoteExport}
+ * </P>
+ * <P>Of the four combinations of import &amp; export, local &amp; remote, the use cases for
+ * remote import are more specialized.
+ * </P>
+ * <P>
+ * This is due to the difficulties in predicting the routing. Remote export is fast by operating
+ * in parallel on all servers simulatenously. Each server writes out the keys that each holds,
+ * there is no routing or network transfer, the operation happens locally. Remote import can
+ * be equally fast, if network transfer can be avoided. For this to occur, the import file
+ * needs to be local to the server that needs it.
+ * </P>
+ * <P>
+ * Recall that with Gemfire, the key routing is abstracted. Any server can be used to update
+ * a key, and it is "hidden" whether the server has the key and updates it directly, or 
+ * whether the server acts as a proxy and merely passes the update request to the correct
+ * server.
+ * </P>
+ * <P>
+ * The challenge for remote import then is to allocate the data files to the servers
+ * correctly. Import will work whether or not this allocation is correct, but import will
+ * be fastest if the allocation is correct.
+ * </P>
+ * <P>
+ * Circumstances in which it is easy to get the allocation correct would be when the
+ * import uses an export from the same cluster (ie. backup and restore) and there has
+ * been no rebalance or similar activity moving the keys around in the interim.
+ * </P>
+ * <HR/>
+ * <P>Usage:
+ * </P>
+ * <P>{@code java RemoteImport} <I>host[port],host[port] server,file1 [server,file2] ....</I>
+ * <P>Eg:
+ * </P>
+ * <P>{@code java LocalImport 51.19.239.100[10355],51.19.239.87[10355] titanium-dit1-cdldfgemf01s101-server2,/tmp/objects.1429873958506.adp titanium-dit1-cdldfgemf01s101-server2,/tmp/prices.1429873958506.adp titanium-dit1-cdldfgemf01s101-server4,/tmp/objects.1429873958506.adp}
+ * </P>
+ * <P>The first argument is a pair of locators, in the same format as used in
+ * a Gemfire properties file on the server side.
+ * </P>
+ * <P>The second and any subsequent arguments list the files to be imported. The format
+ * for each is to list the server to import the file and the file itself.
+ * </P>
  */
 public class RemoteImport extends DataImport {
 	private static final String fileSeparator = System.getProperty("file.separator");

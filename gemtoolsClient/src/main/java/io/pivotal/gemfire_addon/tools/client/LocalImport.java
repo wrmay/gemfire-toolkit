@@ -11,6 +11,7 @@ import com.gemstone.gemfire.cache.Region;
 /**
  * <P>A simple version of import functionality, complementary to GFSH's "{@code import data}".
  * This works with files produced by {@link io.pivotal.gemfire_addon.tools.client.LocalExport}
+ * or {@link io.pivotal.gemfire_addon.tools.client.RemoteExport}
  * </P>
  * <P>The mechanism is to read data from the provided extract files and insert these into
  * Gemfire. The file is read by this process, and the data sent across the network to the
