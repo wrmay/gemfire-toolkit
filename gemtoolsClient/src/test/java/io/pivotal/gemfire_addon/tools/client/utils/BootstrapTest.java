@@ -160,7 +160,7 @@ public class BootstrapTest {
 		String result2 = (String) getClientName.invoke(null, (Object[])null);
 		
 		assertNotNull("result1", result1);
-		assertEquals("result1", result1.length(), 0);
+		assertEquals("result1", result1, System.getProperty("user.name"));
 		assertNotNull("result2", result2);
 		assertEquals("result2", result2, junit);
 	}

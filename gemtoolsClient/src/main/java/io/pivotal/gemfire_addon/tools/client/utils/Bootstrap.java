@@ -120,7 +120,7 @@ public class Bootstrap {
 	/*  Provide a client cache name, to augment the system generate client cache id, for diagnostics
 	 */
 	private static String getClientName() {
-		return System.getProperty("gemfire.security-username","");
+		return System.getProperty("gemfire.security-username",System.getProperty("user.name"));
 	}
 	
 }
