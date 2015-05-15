@@ -50,8 +50,10 @@ import com.gemstone.gemfire.cache.Region;
 public class LocalImport extends DataImport {
 
 	public static void main(final String[] args) throws Exception {
-		new LocalImport().process(args);
-		System.exit(error?1:0);
+		LocalImport localImport = new LocalImport();
+		localImport.process(args);
+		System.exit(localImport.isError()?1:0);
+
 	}
 
 	protected void usage() {
@@ -81,9 +83,9 @@ public class LocalImport extends DataImport {
 	 */
 	protected void processImportRequestList(final List<ImportRequest> importRequestList) throws Exception {
 		for(ImportRequest importRequest : importRequestList) {
-			LOGGER.debug("Start import of '{}'", importRequest.getFile().getAbsoluteFile());
+			super.getLogger().debug("Start import of '{}'", importRequest.getFile().getAbsoluteFile());
 			this.processImportRequest(importRequest);
-			LOGGER.debug("End import of '{}'", importRequest.getFile().getAbsoluteFile());
+			super.getLogger().debug("End import of '{}'", importRequest.getFile().getAbsoluteFile());
 		}
 	}
 
@@ -95,7 +97,7 @@ public class LocalImport extends DataImport {
 		// Parse filename back into region name
 		String[] tokens = importRequest.getFileName().split("\\.");
 		if(tokens.length<3) {
-			error=true;
+			super.setError(true);
 			throw new Exception("File name '" + importRequest.getFile().getAbsoluteFile() + "' not valid, needs region name, timestamp and format");
 		}
 		
@@ -115,13 +117,13 @@ public class LocalImport extends DataImport {
 		}
 		
 		if(regionName.indexOf(Region.SEPARATOR_CHAR)>=0) {
-			error=true;
+			super.setError(true);
 			throw new Exception("Region name '" + importRequest.getFile().getAbsoluteFile() + "' not valid, subregions are not yet supported");
 		}
 		
 		// Disallow deliberate attempts to overwrite system data, such as system users.
 		if(regionName.startsWith("__")) {
-			error=true;
+			super.setError(true);
 			throw new Exception("Region name '" + importRequest.getFile().getAbsoluteFile() + "' not valid, system regions beginning '__' may not be imported");
 		}
 		
@@ -133,9 +135,9 @@ public class LocalImport extends DataImport {
 		String NO_HOST=null;
 		String NO_MEMBER=null;
 
-		Region<?,?> region = clientCache.getRegion(regionName);
+		Region<?,?> region = super.getClientCache().getRegion(regionName);
 		if(region==null) {
-			error=true;
+			super.setError(true);
 			throw new Exception("Region name '" + regionName + "' not found");
 		}
 

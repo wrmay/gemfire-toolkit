@@ -42,7 +42,7 @@ public abstract class CommonImport extends CommonExportImport {
 		List<ImportResponse> results = new ArrayList<>();
 
 		try {
-			LOGGER.info("Import begins: Region {}", region.getFullPath());
+			super.getLogger().info("Import begins: Region {}", region.getFullPath());
 			
 			long localStartTime = System.currentTimeMillis();
 
@@ -63,16 +63,16 @@ public abstract class CommonImport extends CommonExportImport {
 				 * making it easier for any script to parse, to then
 				 * copy the files to a different location
 				 */
-				LOGGER.info("host,{},server,{},directory,{},file,{}", 
+				super.getLogger().info("host,{},server,{},directory,{},file,{}", 
 						result.getHostName(),result.getMemberName(),result.getFileDir(),result.getFileName());
 				recordsWritten += result.getRecordsWritten();
 			}
 			
-			LOGGER.info("Import ends: Region {}: {} records imported in {}ms", 
+			super.getLogger().info("Import ends: Region {}: {} records imported in {}ms", 
 					region.getFullPath(), recordsWritten, (localEndTime - localStartTime));
 		
 		} catch (Exception e) {
-			LOGGER.error("Fail for " + region.getFullPath(), e);
+			super.getLogger().error("Fail for " + region.getFullPath(), e);
 
 		}
 
@@ -112,13 +112,13 @@ public abstract class CommonImport extends CommonExportImport {
 		
 		importResponse.setFile(file);
 		importResponse.setFileDir(file.getParent()==null?"":file.getParent());
-		importResponse.setFileName(file.getName()==null?"":file.getName());
+		importResponse.setFileName(file.getName());
 		importResponse.setMemberName(member==null?"":member);
 		importResponse.setHostName(host==null?"":host);
 		
 		try {
-			LOGGER.info("Import begins: Region {}", region.getFullPath());
-			LOGGER.trace("Input file {}", file.getPath());
+			super.getLogger().info("Import begins: Region {}", region.getFullPath());
+			super.getLogger().trace("Input file {}", file.getPath());
 			
 			long localStartTime = System.currentTimeMillis();
 			
@@ -137,11 +137,11 @@ public abstract class CommonImport extends CommonExportImport {
 			}			
 						
 			long localEndTime = System.currentTimeMillis();
-			LOGGER.info("Import ends: Region {}: {} records imported in {}ms from file '{}'", 
+			super.getLogger().info("Import ends: Region {}: {} records imported in {}ms from file '{}'", 
 					region.getFullPath(), importResponse.getRecordsWritten(), (localEndTime - localStartTime), file.getName());
 
 		} catch (Exception e) {
-			LOGGER.error("Fail for " + region.getFullPath(), e);
+			super.getLogger().error("Fail for " + region.getFullPath(), e);
 		}
 		
 		return importResponse;
@@ -239,7 +239,7 @@ public abstract class CommonImport extends CommonExportImport {
 		
 		// Class hints are optional, not present in empty files
 		if(nextByte!=hintType.getB()) {
-			LOGGER.debug("Missing {} class in {}", hintText, filename);
+			super.getLogger().debug("Missing {} class in {}", hintText, filename);
 			return nextByte;
 		}
 

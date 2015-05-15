@@ -50,7 +50,7 @@ public abstract class CommonExport extends CommonExportImport {
 		ResultCollector<?, ?> resultsCollector = execution.execute(FunctionCatalog.PARALLEL_EXPORT_FN.toString());
 		List<ExportResponse> results = null;
 		try {
-			LOGGER.info("Export begins: Region {}", region.getFullPath());
+			super.getLogger().info("Export begins: Region {}", region.getFullPath());
 			
 			long localStartTime = System.currentTimeMillis();
 
@@ -66,16 +66,16 @@ public abstract class CommonExport extends CommonExportImport {
 				 * making it easier for any script to parse, to then
 				 * copy the files to a different location
 				 */
-				LOGGER.info("host,{},server,{},directory,{},file,{}", 
+				super.getLogger().info("host,{},server,{},directory,{},file,{}", 
 						result.getHostName(),result.getMemberName(),result.getFileDir(),result.getFileName());
 				recordsWritten += result.getRecordsWritten();
 			}
 			
-			LOGGER.info("Export ends: Region {}: {} records exported in {}ms", 
+			super.getLogger().info("Export ends: Region {}: {} records exported in {}ms", 
 					region.getFullPath(), recordsWritten, (localEndTime - localStartTime));
 		
 		} catch (Exception e) {
-			LOGGER.error("Fail for " + region.getFullPath(), e);
+			super.getLogger().error("Fail for " + region.getFullPath(), e);
 
 		}
 
@@ -109,10 +109,10 @@ public abstract class CommonExport extends CommonExportImport {
 		}
 
 		try {
-			LOGGER.info("Export begins: Region {}", region.getFullPath());
+			super.getLogger().info("Export begins: Region {}", region.getFullPath());
 			
 			this.deriveFile(exportResponse, region, member, timestamp, directory, exportFileType, isClient);
-			LOGGER.trace("Output file {}", exportResponse.getFileName());
+			super.getLogger().trace("Output file {}", exportResponse.getFileName());
 			
 			long localStartTime = System.currentTimeMillis();
 			
@@ -123,12 +123,12 @@ public abstract class CommonExport extends CommonExportImport {
 			}			
 						
 			long localEndTime = System.currentTimeMillis();
-			LOGGER.info("Export ends: Region {}: {} records exported in {}ms to file '{}{}{}'", 
+			super.getLogger().info("Export ends: Region {}: {} records exported in {}ms to file '{}{}{}'", 
 					region.getFullPath(), exportResponse.getRecordsWritten(), (localEndTime - localStartTime), 
 					exportResponse.getFileDir(), FILE_SEPARATOR, exportResponse.getFileName());
 
 		} catch (Exception e) {
-			LOGGER.error("Fail for " + region.getFullPath(), e);
+			super.getLogger().error("Fail for " + region.getFullPath(), e);
 		}
 		
 		return exportResponse;

@@ -92,5 +92,56 @@ public class ImportResponse implements Comparable<ImportResponse>, Serializable 
 				+ recordsWritten + "]";
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((fileDir == null) ? 0 : fileDir.hashCode());
+		result = prime * result
+				+ ((fileName == null) ? 0 : fileName.hashCode());
+		result = prime * result
+				+ ((hostName == null) ? 0 : hostName.hashCode());
+		result = prime * result
+				+ ((memberName == null) ? 0 : memberName.hashCode());
+		result = prime * result + recordsRead;
+		result = prime * result + recordsWritten;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ImportResponse other = (ImportResponse) obj;
+		if (fileDir == null) {
+			if (other.fileDir != null)
+				return false;
+		} else if (!fileDir.equals(other.fileDir))
+			return false;
+		if (fileName == null) {
+			if (other.fileName != null)
+				return false;
+		} else if (!fileName.equals(other.fileName))
+			return false;
+		if (hostName == null) {
+			if (other.hostName != null)
+				return false;
+		} else if (!hostName.equals(other.hostName))
+			return false;
+		if (memberName == null) {
+			if (other.memberName != null)
+				return false;
+		} else if (!memberName.equals(other.memberName))
+			return false;
+		if (recordsRead != other.recordsRead)
+			return false;
+		if (recordsWritten != other.recordsWritten)
+			return false;
+		return true;
+	}
 
 }

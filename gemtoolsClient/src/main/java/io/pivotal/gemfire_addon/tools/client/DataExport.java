@@ -20,7 +20,7 @@ public abstract class DataExport extends CommonExport {
 	protected 	static final String     TMP_DIR = System.getProperty("java.io.tmpdir");
 	// File suffix indicates internal format
 	private 	static ExportFileType	FILE_CONTENT_TYPE = null;
-	protected 	static boolean			error = false;
+	private 	boolean					error = false;
 	protected 	static final long 		globalStartTime = System.currentTimeMillis();
 	private 	static ClientCache 		clientCache = null;
 	
@@ -34,16 +34,16 @@ public abstract class DataExport extends CommonExport {
 		
 		if(args==null || args.length<2) {
 			this.usage();
-			error=true;
+			this.error=true;
 			return;
 		}
 		
 		parseLocators(args[0]);
 
 		clientCache = Bootstrap.createDynamicCache();
-		LOGGER = LogManager.getLogger(this.getClass());
+		super.setLogger(LogManager.getLogger(this.getClass()));
 
-		LOGGER.info("Export begins:");
+		super.getLogger().info("Export begins:");
 
 		for(int i=1; i<args.length;i++) {
 			try {
@@ -51,13 +51,13 @@ public abstract class DataExport extends CommonExport {
 					regionCount += exportRegions(args[i]);
 				}
 			} catch (Exception e) {
-				LOGGER.error("Region '" + args[i] + "'", e);
+				super.getLogger().error("Region '" + args[i] + "'", e);
 				error=true;
 			}
 		}
 		
 		long globalEndTime = System.currentTimeMillis();
-		LOGGER.info("Export ends: {} regions exported in {}ms", regionCount, (globalEndTime - globalStartTime));
+		super.getLogger().info("Export ends: {} regions exported in {}ms", regionCount, (globalEndTime - globalStartTime));
 	}
 
 	
@@ -67,7 +67,7 @@ public abstract class DataExport extends CommonExport {
 		int matches=0;
 		
 		ExportFileType exportFileType = getFileContentType();
-		LOGGER.debug("Export file type '.{}' selected", exportFileType);
+		super.getLogger().debug("Export file type '.{}' selected", exportFileType);
 		
 		String regionPattern = produceRegionPattern(arg);
 		
@@ -77,14 +77,14 @@ public abstract class DataExport extends CommonExport {
 				/* Don't throw an exception if wildcard accidentally matches against hidden regions. 
 				 * Eg. "*" will match "__regionAttributesMetadata"
 				 */
-				LOGGER.trace("Ignore matching '{}' region against pattern '{}' -> regex '{}'", regionName, arg, regionPattern);
+				super.getLogger().trace("Ignore matching '{}' region against pattern '{}' -> regex '{}'", regionName, arg, regionPattern);
 			} else {
 				if(regionName.matches(regionPattern)) {
-					LOGGER.trace("Match of '{}' region against pattern '{}' -> regex '{}'", regionName, arg, regionPattern);
+					super.getLogger().trace("Match of '{}' region against pattern '{}' -> regex '{}'", regionName, arg, regionPattern);
 					exportRegion(region, null, null, globalStartTime, TMP_DIR, exportFileType);
 					matches++;
 				} else {
-					LOGGER.trace("No match of '{}' region against pattern '{}' -> regex '{}'", regionName, arg, regionPattern);
+					super.getLogger().trace("No match of '{}' region against pattern '{}' -> regex '{}'", regionName, arg, regionPattern);
 				}
 			}
 		}
@@ -103,7 +103,7 @@ public abstract class DataExport extends CommonExport {
 		}
 		
 		if(regionNameWithPossibleWildcard.indexOf(Region.SEPARATOR_CHAR)>=0) {
-			error=true;
+			this.error=true;
 			throw new Exception("Region name '" + arg + "' not valid, subregions are not yet supported");
 		}
 		
@@ -130,6 +130,10 @@ public abstract class DataExport extends CommonExport {
 		}
 		
 		return FILE_CONTENT_TYPE;
+	}
+
+	protected boolean isError() {
+		return this.error;
 	}
 
 }

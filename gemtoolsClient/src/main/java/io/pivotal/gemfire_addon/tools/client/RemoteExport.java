@@ -1,6 +1,7 @@
 package io.pivotal.gemfire_addon.tools.client;
 
 import io.pivotal.gemfire_addon.types.ExportFileType;
+
 import com.gemstone.gemfire.cache.Region;
 
 /**
@@ -66,8 +67,9 @@ import com.gemstone.gemfire.cache.Region;
 public class RemoteExport extends DataExport {
 	
 	public static void main(String[] args) throws Exception {
-		new RemoteExport().process(args);
-		System.exit(error?1:0);
+		RemoteExport remoteExport = new RemoteExport();
+		remoteExport.process(args);
+		System.exit(remoteExport.isError()?1:0);
 	}
 	
 	/* Use the function mechanism for export. This runs on the servers in

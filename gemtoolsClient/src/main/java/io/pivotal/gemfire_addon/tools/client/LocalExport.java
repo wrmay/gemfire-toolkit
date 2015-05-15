@@ -50,8 +50,9 @@ import com.gemstone.gemfire.cache.Region;
 public class LocalExport extends DataExport {
 	
 	public static void main(String[] args) throws Exception {
-		new LocalExport().process(args);
-		System.exit(error?1:0);
+		LocalExport localExport = new LocalExport();
+		localExport.process(args);
+		System.exit(localExport.isError()?1:0);
 	}
 	
 	/* Use the keySet() mechanism for local export.

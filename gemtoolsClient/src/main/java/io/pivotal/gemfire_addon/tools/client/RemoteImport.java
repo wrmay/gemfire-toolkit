@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+
 import com.gemstone.gemfire.cache.Region;
 
 import io.pivotal.gemfire_addon.types.ImportRequest;
@@ -58,8 +59,9 @@ public class RemoteImport extends DataImport {
 	private static final String fileSeparator = System.getProperty("file.separator");
 	
 	public static void main(final String[] args) throws Exception {
-		new RemoteImport().process(args);
-		System.exit(error?1:0);
+		RemoteImport remoteImport = new RemoteImport();
+		remoteImport.process(args);
+		System.exit(remoteImport.isError()?1:0);
 	}
 
 	protected void usage() {
@@ -72,7 +74,7 @@ public class RemoteImport extends DataImport {
 		
 		String[] tokens = arg.split(",");
 		if(tokens.length<2 || tokens[0].length()==0) {
-			error=true;
+			super.setError(true);
 			throw new Exception("Argument '" + arg + "' not valid, needs server name, comma then file");
 		}
 		
@@ -113,7 +115,7 @@ public class RemoteImport extends DataImport {
 					}
 				}
 				
-				Region<?,?> region = clientCache.getRegion(regionName);
+				Region<?,?> region = super.getClientCache().getRegion(regionName);
 				if(region!=null) {
 					this.importRegionFunction(region, importRequestSubset);
 				} else {

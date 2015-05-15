@@ -18,8 +18,14 @@ public abstract class CommonExportImport {
 	private   static int 				BLOCK_SIZE=-1;
 	private	  static final int 			DEFAULT_BLOCK_SIZE=1000;
 	
-	protected static Logger 			LOGGER = null;
-
+	protected Logger 					logger;
+	protected Logger getLogger() {
+		return logger;
+	}
+	protected void setLogger(Logger logger) {
+		this.logger = logger;
+	}
+	
 	/* Expecting exactly two locators, formatted as "host:port,host:port" or
 	 * as "host[port],host[port]".
 	 * Parse these and set as system properties for parameterized cache.xml file.
@@ -78,7 +84,7 @@ public abstract class CommonExportImport {
 				}
 				BLOCK_SIZE = tmpValue;
 			} catch (Exception e) {
-				LOGGER.error("Can't use '" + tmpStr + "' for BLOCK_SIZE", e);
+				this.logger.error("Can't use '" + tmpStr + "' for BLOCK_SIZE", e);
 			}
 		}
 		
@@ -87,8 +93,10 @@ public abstract class CommonExportImport {
 			BLOCK_SIZE = DEFAULT_BLOCK_SIZE;
 		}
 		
-		LOGGER.debug("Block size={} being used for getAll()", BLOCK_SIZE);
+		this.logger.debug("Block size={} being used for getAll()", BLOCK_SIZE);
 		return BLOCK_SIZE;
 	}
+
+
 
 }

@@ -20,8 +20,8 @@ import io.pivotal.gemfire_addon.types.ImportRequest;
  * </P>
  */
 public abstract class DataImport extends CommonImport {
-	protected 	static boolean			error = false;
-	protected 	static ClientCache 			clientCache = null;
+	private 	boolean						error = false;
+	private 	static ClientCache 			clientCache = null;
 	private 	static final long 			globalStartTime = System.currentTimeMillis();
 
 	protected abstract void usage();
@@ -31,15 +31,16 @@ public abstract class DataImport extends CommonImport {
 		
 		if(args==null || args.length<2) {
 			this.usage();
-			error=true;
+			this.error=true;
 			return;
 		}
 		
 		parseLocators(args[0]);
 
 		clientCache = Bootstrap.createDynamicCache();
-		LOGGER = LogManager.getLogger(this.getClass());
-		LOGGER.info("Import begins:");
+		super.setLogger(LogManager.getLogger(this.getClass()));
+		
+		super.getLogger().info("Import begins:");
 
 		List<ImportRequest> request = new ArrayList<>();
 		for(int i=1; i<args.length;i++) {
@@ -49,7 +50,7 @@ public abstract class DataImport extends CommonImport {
 					fileCount += 1;
 				}
 			} catch (Exception e) {
-				LOGGER.error("File '" + args[i] + "'", e);
+				super.getLogger().error("File '" + args[i] + "'", e);
 				error=true;
 			}
 		}
@@ -57,7 +58,7 @@ public abstract class DataImport extends CommonImport {
 		this.processImportRequestList(request);
 		
 		long globalEndTime = System.currentTimeMillis();
-		LOGGER.info("Import ends: {} files imported in {}ms", fileCount, (globalEndTime - globalStartTime));
+		super.getLogger().info("Import ends: {} files imported in {}ms", fileCount, (globalEndTime - globalStartTime));
 	}
 
 	protected abstract ImportRequest importRequest(final String arg) throws Exception;
@@ -66,7 +67,7 @@ public abstract class DataImport extends CommonImport {
 		// Parse filename back into region name
 		String[] tokens = filename.split("\\.");
 		if(tokens.length<3) {
-			error=true;
+			this.error=true;
 			throw new Exception("File name '" + filename + "' not valid, needs region name, timestamp and format");
 		}
 		
@@ -82,5 +83,16 @@ public abstract class DataImport extends CommonImport {
 	}
 	
 	protected abstract void processImportRequestList(final List<ImportRequest> importRequest) throws Exception;
+
+	protected boolean isError() {
+		return this.error;
+	}
+	protected void setError(boolean error) {
+		this.error = error;
+	}
+
+	public static ClientCache getClientCache() {
+		return clientCache;
+	}
 
 }

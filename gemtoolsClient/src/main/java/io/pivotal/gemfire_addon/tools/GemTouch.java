@@ -11,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.management.JMX;
+import javax.management.MalformedObjectNameException;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
@@ -92,7 +93,7 @@ public class GemTouch {
 			
 			rc = 0;
 			
-		} catch(Exception x){
+		} catch(IOException|MalformedObjectNameException x){
 			x.printStackTrace(System.err);
 		} finally {
 			if (jmxc != null) {
