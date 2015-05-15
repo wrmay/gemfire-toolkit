@@ -101,27 +101,27 @@ public class ADPParallelImport extends CommonImport implements Declarable, Funct
 			Region<?,?> region = regionFunctionContext.getDataSet();
 			String regionName = region.getFullPath();
 
-			LOGGER.debug("Import to {} begins", regionName);
+			super.getLogger().debug("Import to {} begins", regionName);
 
 			Object args = functionContext.getArguments();
 			
 			List<ImportResponse> results = new ArrayList<>();
 			for(ImportRequest importRequest : (List<ImportRequest>)args) {
 				if(myName.equalsIgnoreCase(importRequest.getMember())) {
-					LOGGER.debug("Starting import of {}", importRequest.getFileName());
+					super.getLogger().debug("Starting import of {}", importRequest.getFileName());
 					ImportResponse importResponse = this.importRegion(region, importRequest.getFileDir(), importRequest.getFileName(), myName, myHost);
-					LOGGER.debug("Completed import of {} as {}", importRequest.getFileName(), importResponse);
+					super.getLogger().debug("Completed import of {} as {}", importRequest.getFileName(), importResponse);
 					results.add(importResponse);
 				} else {
-					LOGGER.trace("Ignoring import of {} for {}", importRequest.getFileName(), importRequest.getMember());
+					super.getLogger().trace("Ignoring import of {} for {}", importRequest.getFileName(), importRequest.getMember());
 				}
 				
 			}
-			LOGGER.debug("Import to {} ends, result {}", regionName, results);
+			super.getLogger().debug("Import to {} ends, result {}", regionName, results);
 			
 			functionContext.getResultSender().lastResult(results);
 		} catch (Exception exception) {
-			LOGGER.debug("Export failed:", exception.getMessage());
+			super.getLogger().debug("Export failed:", exception.getMessage());
 			RuntimeException serializableException = new RuntimeException(exception.getMessage());
 	        serializableException.setStackTrace(exception.getStackTrace());
 	        functionContext.getResultSender().sendException(serializableException);
@@ -151,7 +151,7 @@ public class ADPParallelImport extends CommonImport implements Declarable, Funct
 
 	public void init(final Properties arg0) {
 		cache = CacheFactory.getAnyInstance();
-		LOGGER = LogManager.getLogger(this.getClass());
+		super.setLogger(LogManager.getLogger(this.getClass()));
 	}
 
 }

@@ -96,7 +96,7 @@ public class ADPParallelExport extends CommonExport implements Declarable, Funct
 			Region<?,?> region = regionFunctionContext.getDataSet();
 			String regionName = region.getFullPath();
 
-			LOGGER.debug("Export of {} begins", regionName);
+			super.getLogger().debug("Export of {} begins", regionName);
 
 			Object args = functionContext.getArguments();
 			long startTime;
@@ -104,7 +104,7 @@ public class ADPParallelExport extends CommonExport implements Declarable, Funct
 				startTime = Long.parseLong(args.toString());
 				long diff = currentTime - startTime;
 				if(Math.abs(diff) > 1000L) {
-					LOGGER.warn("Export of {}, provided timestamp {} different from reality by {}ms", regionName, startTime, diff);
+					super.getLogger().warn("Export of {}, provided timestamp {} different from reality by {}ms", regionName, startTime, diff);
 				}
 			} else {
 				startTime = currentTime;
@@ -116,11 +116,11 @@ public class ADPParallelExport extends CommonExport implements Declarable, Funct
 			
 			ExportResponse exportResponse = this.exportRegionKeySet(region, myName, myHost, startTime, "", ExportFileType.ADP_DEFAULT_FORMAT);
 			
-			LOGGER.debug("Export of {} ends, result {}", regionName, exportResponse);
+			super.getLogger().debug("Export of {} ends, result {}", regionName, exportResponse);
 			
 			functionContext.getResultSender().lastResult(exportResponse);
 		} catch (Exception exception) {
-			LOGGER.debug("Export failed:", exception.getMessage());
+			super.getLogger().debug("Export failed:", exception.getMessage());
 			RuntimeException serializableException = new RuntimeException(exception.getMessage());
 	        serializableException.setStackTrace(exception.getStackTrace());
 	        functionContext.getResultSender().sendException(serializableException);
@@ -148,7 +148,7 @@ public class ADPParallelExport extends CommonExport implements Declarable, Funct
 
 	public void init(final Properties arg0) {
 		cache = CacheFactory.getAnyInstance();
-		LOGGER = LogManager.getLogger(this.getClass());
+		super.setLogger(LogManager.getLogger(this.getClass()));
 	}
 
 }
