@@ -1,4 +1,4 @@
-package io.pivotal.gemfire_addon.tools;
+package io.pivotal.gemfire.extensions.tools;
 
 import java.util.concurrent.TimeUnit;
 
@@ -6,11 +6,14 @@ import com.gemstone.gemfire.cache.execute.FunctionException;
 import com.gemstone.gemfire.cache.execute.ResultCollector;
 import com.gemstone.gemfire.distributed.DistributedMember;
 
-public class LoggingResultCollector implements ResultCollector <String,String> {
+/*
+ * simply writes messages to the console as they arrive
+ */
+public class PrintResultCollector implements ResultCollector<String, String> {
 
 	@Override
-	public void addResult(DistributedMember mbr, String msg) {
-		System.out.println(mbr.getName() +  " on " + mbr.getHost()  + " " + msg);
+	public void addResult(DistributedMember member, String msg) {
+		System.out.println(msg);
 	}
 
 	@Override
@@ -23,13 +26,13 @@ public class LoggingResultCollector implements ResultCollector <String,String> {
 
 	@Override
 	public String getResult() throws FunctionException {
-		return "SUCCESS";
+		return "done";
 	}
 
 	@Override
 	public String getResult(long arg0, TimeUnit arg1) throws FunctionException,
 			InterruptedException {
-		return "SUCCESS";
+		return "done";
 	}
-
+	
 }

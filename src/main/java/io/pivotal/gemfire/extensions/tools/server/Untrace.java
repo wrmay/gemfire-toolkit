@@ -1,6 +1,10 @@
-package io.pivotal.gemfire_addon.tools.server;
+package io.pivotal.gemfire.extensions.tools.server;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gemstone.gemfire.cache.AttributesMutator;
 import com.gemstone.gemfire.cache.CacheFactory;
 import com.gemstone.gemfire.cache.CacheListener;
 import com.gemstone.gemfire.cache.Region;
@@ -16,7 +20,7 @@ import com.gemstone.gemfire.cache.execute.FunctionContext;
  *
  */
 
-public class Trace implements Function {
+public class Untrace implements Function {
 
 	
 	
@@ -29,20 +33,25 @@ public class Trace implements Function {
 			throw new RuntimeException("region not found: " + regionName);
 		}
 		
-		String result = null;
+		
+		List<CacheListener> listenersToRemove = new ArrayList<CacheListener>(1);
 		
 		RegionAttributes attrs = region.getAttributes();
 		for (CacheListener listener : attrs.getCacheListeners()){
 			if (listener instanceof TraceCacheListener){
-				result = "trace listener already present on " + regionName + " in " + CacheFactory.getAnyInstance().getDistributedSystem().getDistributedMember().getName();				
-				break;
+				listenersToRemove.add(listener);
 			}
 		}
 		
-		if (result == null){
-			CacheListener l = new TraceCacheListener(regionName);
-			region.getAttributesMutator().addCacheListener(l);
-			result = "trace listener installed  on " + regionName + " in " + CacheFactory.getAnyInstance().getDistributedSystem().getDistributedMember().getName();				
+		String result = null;
+		if (listenersToRemove.size() == 0){
+			result = "trace listener not found on " + regionName + " in " + CacheFactory.getAnyInstance().getDistributedSystem().getDistributedMember().getName();				
+		} else {
+			AttributesMutator ram = region.getAttributesMutator();
+			for (CacheListener l : listenersToRemove){
+				ram.removeCacheListener(l);
+			}
+			result = "trace listener removed from " + regionName + " in " + CacheFactory.getAnyInstance().getDistributedSystem().getDistributedMember().getName();							
 		}
 
 		ctx.getResultSender().lastResult(result);
@@ -51,7 +60,7 @@ public class Trace implements Function {
 	
 	@Override
 	public String getId() {
-		return io.pivotal.gemfire_addon.tools.Trace.NAME;
+		return io.pivotal.gemfire.extensions.tools.Untrace.NAME;
 	}
 
 	@Override

@@ -12,6 +12,6 @@ here = os.path.dirname(sys.argv[0])
 classpath = os.path.join(here,"lib","*")
 java = os.path.join(os.environ["JAVA_HOME"],"bin","java")
 
-args = [java, "-cp", classpath, "io.pivotal.gemfire_addon.tools.CheckRedundancy"]
+args = [java, "-cp", classpath, "io.pivotal.gemfire.extensions.tools.CheckRedundancy"]
 args = args + sys.argv[1:]
 os.execv(java, args)

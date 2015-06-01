@@ -12,6 +12,6 @@ here = os.path.dirname(sys.argv[0])
 classpath = os.path.join(here,"lib","*")
 java = os.path.join(os.environ["JAVA_HOME"],"bin","java")
 
-args = [java, "-cp", classpath, "-Dgemfire.log-file=trace.log","io.pivotal.gemfire_addon.tools.Trace"]
+args = [java, "-cp", classpath, "-Dgemfire.log-file=trace.log","io.pivotal.gemfire.extensions.tools.Trace"]
 args = args + sys.argv[1:]
 os.execv(java, args)

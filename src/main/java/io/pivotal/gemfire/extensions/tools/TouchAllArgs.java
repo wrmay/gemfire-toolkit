@@ -1,4 +1,4 @@
-package io.pivotal.gemfire_addon.tools;
+package io.pivotal.gemfire.extensions.tools;
 
 import java.io.Serializable;
 

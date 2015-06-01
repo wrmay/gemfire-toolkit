@@ -1,4 +1,4 @@
-package io.pivotal.gemfire_addon.tools.server;
+package io.pivotal.gemfire.extensions.tools.server;
 
 import com.gemstone.gemfire.LogWriter;
 import com.gemstone.gemfire.cache.CacheEvent;
