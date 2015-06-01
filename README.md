@@ -2,7 +2,11 @@
 
 A collection of useful utilities for administering GemFire
 
-##gemtouch
+##Python cluster control scripts##
+A very convenient and flexible set of Python scripts
+preconfigured to launch 2 clusters connected via gateway
+
+##gemtouch##
 The "gemtouch" tool can be used to facilitate recovery over WAN
 
 This utility connects to the JMX manager to determine the list of all regions in a distributed
@@ -14,7 +18,7 @@ If an entry happens to be updated or removed between the time that this utility 
 the time that it attempts a put, the put will be aborted to avoid accidentally undoing an update 
 from an external source.  In other words, the utility is safe to run on an active cluster.
 
-##checkred
+##checkred##
 The "checkred" tool can report regions that are "at risk" because they are not fully redundant. 
 The tool only reports on the redundancy status of partitioned regions.  Replicate regions are 
 redundant so long as more than one member of the distributed system is running.
@@ -37,7 +41,7 @@ untrace.py locatorhost[port] /SomeRegion
 ```
 
 
-# Installation
+# Installation#
 Unpack the tarball: gemtools-VERSION-runtime.tar.gz
 
 This will create a directory, "gemtools" which contains everything needed to run the script (except a JVM)
@@ -48,8 +52,80 @@ the cluster that you want to act upon.
 Set the JAVA_HOME environment variable to point to a java installation. 
 The script will execute the JVM at $JAVA_HOME/bin/java
 
+#python script usage#
 
-#gemtouch usage
+The python control scripts  and all required files are located in the "cluster" directory.
+This directory can be copied to any place that is convenient.
+
+The layout of file system inside of the cluster directory is described below:
+
+```
+cluster
+|--1              #working direcory for cluster 1
+|  |--locator     #working directory for locator (logs, stats, disk stores)
+|  |--server_1    #working directory for server_1 (logs, stats, disk stores)
+|  |--server_2    #working directory for server_2 (logs, stats, disk stores)
+|
+|--2              #working directory for cluster_2
+|  |--locator     #working directory for locator (logs, stats, disk stores)
+|  |--server_1    #working directory for server_1 (logs, stats, disk stores)
+|  |--server_2    #working directory for server_2 (logs, stats, disk stores)
+|
+|--config         #shared configuration
+|  |--cache.xml
+|
+|-removecluster.py #script, removes a cluster
+|-startcluster.py  #script, starts a cluster
+|-stopcluster.py   #script, stops a cluster
+|-wancluster.py    #scrip, shared, not directly invoked
+```
+
+Note that the "1" and "2" subtrees contain no source or scripts, only working files
+such as logs, stats and disk stores.  They can be removed without breaking anything.
+
+####setup procedure####
+1. copy the "cluster" directory to a location of your choosing
+2. set the GEMFIRE environment variable to the location of the GemFire installation you
+will use
+3. set the JAVA_HOME environment variable to the location of a JDK
+4. if you wish to use specific pre-defined region configurations, put them in "config/cache.xml"
+5. all commands should be executed in the cluster home directory
+
+#### usage examples####
+_start cluster 1 with 2 servers_
+```
+./startcluster.py 1 2
+```
+
+_start cluster 2 with 3 servers_
+```
+./startcluster.py 2 3
+```
+
+_stop cluster 1_
+```
+./stopcluster.py 1
+```
+
+_remove cluster 1_ (removes all disk stores, logs, stats)
+```
+./removecluster.py 1
+```
+
+####ports####
+
+The clusters will use the following ports
+
+|type                   | cluster 1         | cluster 2         |
+|-----------------------|-------------------|-------------------|
+| locator               |             10000 |             20000 |
+| cache servers         | 10101,10102, ...  | 20101,20102, ...  |
+| jmx manager           |             11099 |             21099 |
+| gateway receivers     | 12000-12999       | 22000-22999       |
+| http (Pulse)          |             17070 |             27070 |
+
+
+#gemtouch usage#
 
 example: 
 
