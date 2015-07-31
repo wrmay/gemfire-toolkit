@@ -1,0 +1,34 @@
+{
+    "global-properties":{
+        "gemfire.path": "/Users/rmay/Pivotal/software/Pivotal_GemFire_810_b50625_Linux",
+        "java.path" : "/Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home",
+        "gemfire.locators" : "localhost[10000]",
+        "gemfire.cluster-home" : "/Users/rmay/Pivotal/gemfire-toolkit/cluster/1"
+    },
+   "locator-properties" : {
+        "gemfire.locator.port" : 10000,
+        "gemfire.jmx-manager-port" : 11099,
+        "gemfire.http-service-port" : 17070,
+    },
+   "data-node-properties" : {
+        "gemfire.server-port" : 1100
+    },
+    "hosts": { 
+        "Randy-May-MacBook-Pro.local" : {  
+            "host-properties" :  {
+             },
+            "processes" :  {  
+                "locator" : {
+                      "type" : "locator",
+                 },
+                 "server1" : {
+                    "type" : "datanode"
+                 },
+                 "server2" : {
+                    "type" : "datanode"
+                 }
+            }
+        }
+   }
+}
+
