@@ -17,7 +17,7 @@ clusterDef = None
 def ensureDir(dname):
 	if not os.path.isdir(dname):
 		os.mkdir(dname)
-		
+
 	
 def ensureDirectories(cnum, nodecount):
 	ensureDir(CLUSTER_HOME)
@@ -76,8 +76,8 @@ def stopLocator(cnum):
 		, "stop", "locator"
 		,"--dir=" + locatorDir(cnum)])
 		
-def startLocator(cnum):
-	ensureDirectories(cnum, 0)
+def startLocator(processName):
+	ensureDir()
 
 	if locatorIsRunning(cnum):
 		return
