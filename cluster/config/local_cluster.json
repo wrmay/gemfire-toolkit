@@ -1,17 +1,25 @@
 {
     "global-properties":{
-        "gemfire.path": "/Users/rmay/Pivotal/software/Pivotal_GemFire_810_b50625_Linux",
-        "java.path" : "/Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home",
-        "gemfire.locators" : "localhost[10000]",
-        "gemfire.cluster-home" : "/Users/rmay/Pivotal/gemfire-toolkit/cluster/1"
+        "gemfire": "/Users/rmay/Pivotal/software/Pivotal_GemFire_810_b50625_Linux",
+        "java-home" : "/Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home",
+        "locators" : "localhost[10000]",
+        "cluster-home" : "/Users/rmay/Pivotal/gemfire-toolkit/cluster/1"
     },
    "locator-properties" : {
-        "gemfire.locator.port" : 10000,
-        "gemfire.jmx-manager-port" : 11099,
-        "gemfire.http-service-port" : 17070,
+        "bind-address": "en0", 
+        "port" : 10000,
+        "jmx-manager-bind-address" : "en0",
+        "jmx-manager-port" : 11099,
+        "http-service-bind-address" : "en0",
+        "http-service-port" : 17070,
+        "jvm-options" : ["-Xmx1g","-Xms1g", "-XX:+UseConcMarkSweepGC"]
     },
-   "data-node-properties" : {
-        "gemfire.server-port" : 1100
+   "datanode-properties" : {
+        "bind-address" : "en0",
+        "server-bind-address" : "en0",
+        "server-port" : 1100,
+        "conserve-sockets" : false,
+        "jvm-options" : ["-Xmx3g","-Xms3g","-Xmn1g", "-XX:+UseConcMarkSweepGC"]
     },
     "hosts": { 
         "Randy-May-MacBook-Pro.local" : {  
@@ -19,7 +27,7 @@
              },
             "processes" :  {  
                 "locator" : {
-                      "type" : "locator",
+                      "type" : "locator"
                  },
                  "server1" : {
                     "type" : "datanode"

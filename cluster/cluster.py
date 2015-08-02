@@ -2,6 +2,8 @@
 
 from __future__ import print_function
 import clusterdef
+import json
+import netifaces
 import os
 import os.path
 import socket
@@ -14,19 +16,14 @@ SERVER_PID_FILE="cf.gf.server.pid"
 
 clusterDef = None
 
+
 def ensureDir(dname):
 	if not os.path.isdir(dname):
 		os.mkdir(dname)
-
-	
-def ensureDirectories(cnum, nodecount):
-	ensureDir(CLUSTER_HOME)
-	ensureDir(clusterDir(cnum))
-	ensureDir(locatorDir(cnum))
-	if nodecount > 0:
-		for i in range(1,nodecount + 1):
-			ensureDir(serverDir(cnum,i))
-
+		
+def locatorDir(processName):
+	clusterHomeDir = clusterDef.locatorProperty(processName, 'cluster-home')
+	return(os.path.join(clusterHomeDir,processName))
 
 def pidIsAlive(pidfile):
 	if not os.path.exists(pidfile):
@@ -41,7 +38,6 @@ def pidIsAlive(pidfile):
 	else:
 		return False
 	
-
 def serverIsRunning(cnum, snum):
 	try:
 		sock = socket.create_connection(("localhost", serverport(cnum,snum)))
@@ -55,9 +51,11 @@ def serverIsRunning(cnum, snum):
 	pidfile = serverDir(cnum,snum) + "/SERVER_PID_FILE"
 	return pidIsAlive(pidfile)	
 	
-def locatorIsRunning(cnum):
+def locatorIsRunning(processName):
+	port = clusterDef.locatorProperty(processName, 'port')
+	bindAddress = clusterDef.translateBindAddress(clusterDef.locatorProperty(processName, 'bind-address'))
 	try:
-		sock = socket.create_connection(("localhost", locatorport(cnum)))
+		sock = socket.create_connection((bindAddress, port))
 		sock.close()
 		return True
 	except Exception as x:
@@ -65,35 +63,62 @@ def locatorIsRunning(cnum):
 		# ok - probably not running
 		
 	# now check the pid file
-	pidfile = locatorDir(cnum) + "/LOCATOR_PID_FILE"
+	pidfile = os.path.join(clusterDef.locatorProperty(processName, 'cluster-home'), processName, LOCATOR_PID_FILE)
 	return pidIsAlive(pidfile)	
 		
-def stopLocator(cnum):
-	if not locatorIsRunning(cnum):
+def stopLocator(processName):
+	GEMFIRE = clusterDef.locatorProperty(processName,'gemfire')
+	os.environ['GEMFIRE'] = GEMFIRE
+	os.environ['JAVA_HOME'] = clusterDef.locatorProperty(processName,'java-home')
+	
+	if not locatorIsRunning(processName):
+		print('{0} is not running'.format(processName))
 		return
+	try:	
+		subprocess.check_call([os.path.join(GEMFIRE,'bin','gfsh')
+			, "stop", "locator"
+			,"--dir=" + locatorDir(processName)])
+	except subprocess.CalledProcessError as x:
+		sys.exit(x.message)
+
+def statusLocator(processName):
+	GEMFIRE = clusterDef.locatorProperty(processName,'gemfire')
+	os.environ['GEMFIRE'] = GEMFIRE
+	os.environ['JAVA_HOME'] = clusterDef.locatorProperty(processName,'java-home')
+	
+	try:
+		subprocess.check_call([os.path.join(GEMFIRE,'bin','gfsh')
+			, "status", "locator"
+			,"--dir=" + locatorDir(processName)])
 		
-	subprocess.check_call([GEMFIRE + "/bin/gfsh"
-		, "stop", "locator"
-		,"--dir=" + locatorDir(cnum)])
+	except subprocess.CalledProcessError as x:
+		sys.exit(x.output)
 		
 def startLocator(processName):
-	ensureDir()
+	GEMFIRE = clusterDef.locatorProperty(processName,'gemfire')
+	os.environ['GEMFIRE'] = GEMFIRE
+	os.environ['JAVA_HOME'] = clusterDef.locatorProperty(processName,'java-home')
+	
+	ensureDir(clusterDef.locatorProperty(processName, 'cluster-home'))
+	ensureDir(locatorDir(processName))
 
-	if locatorIsRunning(cnum):
+	if locatorIsRunning(processName):
+		print('locator {0} is already running'.format(processName))
 		return
-		
-	subprocess.check_call([GEMFIRE + "/bin/gfsh"
+	
+	cmdLine = [os.path.join(GEMFIRE,'bin','gfsh')
 		, "start", "locator"
-		,"--dir=" + locatorDir(cnum)
-		,"--port={0}".format(locatorport(cnum))
-		,"--name=locator" 
-		,"--mcast-port=0"
-		,"--J=-Dgemfire.distributed-system-id={0}".format(cnum)
-		,"--J=-Dgemfire.remote-locators={0}".format(WAN_CONFIG[cnum].REMOTE_LOCATORS)
-		,"--J=-DREMOTE_DISTRIBUTED_SYSTEM_ID={0}".format(WAN_CONFIG[cnum].REMOTE_DISTRIBUTED_SYSTEM_ID)
-		,"--J=-Dgemfire.jmx-manager-port={0}".format(jmxmanagerport(cnum))
-		,"--J=-Dgemfire.http-service-port={0}".format(httpport(cnum))
-		])
+		,"--dir=" + locatorDir(processName)
+		,"--port={0}".format(clusterDef.locatorProperty(processName, 'port'))
+		,'--bind-address={0}'.format(clusterDef.locatorProperty(processName,'bind-address'))
+		,"--name={0}".format(processName)]
+	
+	cmdLine[len(cmdLine):] = clusterDef.gfshArgs('locator',processName)
+	
+	try:
+		subprocess.check_call(cmdLine)
+	except subprocess.CalledProcessError as x:
+		sys.exit(x.message)
 
 	
 def startCluster(cnum, nodecount):
@@ -148,7 +173,6 @@ def printUsage():
 	print('Notes:')
 	print('* all commands are idempotent')
 	
-
 if __name__ == '__main__':
 	if len(sys.argv) == 1:
 		printUsage()
@@ -159,7 +183,7 @@ if __name__ == '__main__':
 		sys.exit('could not find cluster definition file: ' + clusterDefFile)
 		
 	with open(clusterDefFile,'r') as f:
-		clusterDef = ClusterDef(json.load(f))
+		clusterDef = clusterdef.ClusterDef(json.load(f))
 		
 	if len(sys.argv) < 4:
 		sys.exit('invalid input, please provide a command and an object')
@@ -167,13 +191,13 @@ if __name__ == '__main__':
 	cmd = sys.argv[2]
 	obj = sys.argv[3]
 	
-	if clusterDef.isLocatorOnThisHost(obj):
+	if clusterDef.isLocator(obj):
 		if cmd == 'start':
-			pass
+			startLocator(obj)
 		elif cmd == 'stop':
-			pass
+			stopLocator(obj)
 		elif cmd == 'status':
-			pass
+			statusLocator(obj)
 		else:
 			sys.exit(cmd + ' is an unkown operation for locators')
 	else:
