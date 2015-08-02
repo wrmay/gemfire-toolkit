@@ -2,7 +2,7 @@
     "global-properties":{
         "gemfire": "/Users/rmay/Pivotal/software/Pivotal_GemFire_810_b50625_Linux",
         "java-home" : "/Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home",
-        "locators" : "localhost[10000]",
+        "locators" : "192.168.1.112[10000]",
         "cluster-home" : "/Users/rmay/Pivotal/gemfire-toolkit/cluster/1"
     },
    "locator-properties" : {
@@ -17,7 +17,6 @@
    "datanode-properties" : {
         "bind-address" : "en0",
         "server-bind-address" : "en0",
-        "server-port" : 1100,
         "conserve-sockets" : false,
         "jvm-options" : ["-Xmx3g","-Xms3g","-Xmn1g", "-XX:+UseConcMarkSweepGC"]
     },
@@ -30,10 +29,12 @@
                       "type" : "locator"
                  },
                  "server1" : {
-                    "type" : "datanode"
+                    "type" : "datanode",
+                    "server-port" : 10100
                  },
                  "server2" : {
-                    "type" : "datanode"
+                    "type" : "datanode",
+                    "server-port" : 10200
                  }
             }
         }

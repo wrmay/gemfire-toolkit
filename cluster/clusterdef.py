@@ -7,12 +7,11 @@ import socket
 #
 
 HANDLED_PROPS=['gemfire','java-home','cluster-home', 'bind-address', 'port',
-               'jvm-options']
+               'jvm-options','server-bind-address', 'server-port']
 
 GEMFIRE_PROPS=['locators','jmx-manager-bind-address','jmx-manager-port',
                'http-service-bind-address','http-service-port',
-               'server-bind-address', 'server-port','conserve-sockets',
-               'cache-xml-file']
+               'conserve-sockets','cache-xml-file']
 
 class ClusterDef:
     

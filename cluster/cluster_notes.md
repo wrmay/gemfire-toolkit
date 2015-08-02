@@ -10,9 +10,10 @@ required cluster level properties
 required properties for locators
     port
     bind-address
-    memory
     
 required properties for data nodes
+    server-port 
+    server-bind-address
 
 
 every process has to have a unique name

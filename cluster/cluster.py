@@ -12,7 +12,7 @@ import sys
 
 
 LOCATOR_PID_FILE="cf.gf.locator.pid"
-SERVER_PID_FILE="cf.gf.server.pid"
+SERVER_PID_FILE="vf.gf.server.pid"
 
 clusterDef = None
 
@@ -25,37 +25,51 @@ def locatorDir(processName):
 	clusterHomeDir = clusterDef.locatorProperty(processName, 'cluster-home')
 	return(os.path.join(clusterHomeDir,processName))
 
+def datanodeDir(processName):
+	clusterHomeDir = clusterDef.datanodeProperty(processName, 'cluster-home')
+	return(os.path.join(clusterHomeDir,processName))
+
+
 def pidIsAlive(pidfile):
 	if not os.path.exists(pidfile):
 		return False
 		
-	with fopen(pidfile,"r") as f:
+	with open(pidfile,"r") as f:
 		pid = int(f.read())
 
-	psrc = subprocess.call(["ps",str(pid)])
-	if psrc == 0:
+	proc = subprocess.Popen(["ps",str(pid)], stdin=subprocess.PIPE,
+		stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+	
+	proc.communicate()
+	
+	if proc.returncode == 0:
 		return True
 	else:
 		return False
 	
-def serverIsRunning(cnum, snum):
+def serverIsRunning(processName):
 	try:
-		sock = socket.create_connection(("localhost", serverport(cnum,snum)))
+		port = clusterDef.locatorProperty(processName, 'server-port')
+		bindAddress = clusterDef.translateBindAddress(clusterDef.datanodeProperty(processName, 'server-bind-address'))
+		
+		sock = socket.create_connection(bindAddress, port)
 		sock.close()
+		
 		return True
 	except Exception as x:
 		pass
 		# ok - probably not running
 		
 	# now check the pid file
-	pidfile = serverDir(cnum,snum) + "/SERVER_PID_FILE"
-	return pidIsAlive(pidfile)	
+	pidfile = os.path.join(clusterDef.datanodeProperty(processName, 'cluster-home'), processName, SERVER_PID_FILE)
+	result = pidIsAlive(pidfile)	
+	return result
 	
 def locatorIsRunning(processName):
 	port = clusterDef.locatorProperty(processName, 'port')
 	bindAddress = clusterDef.translateBindAddress(clusterDef.locatorProperty(processName, 'bind-address'))
 	try:
-		sock = socket.create_connection((bindAddress, port))
+		sock = socket.create_connection(bindAddress, port)
 		sock.close()
 		return True
 	except Exception as x:
@@ -81,6 +95,22 @@ def stopLocator(processName):
 	except subprocess.CalledProcessError as x:
 		sys.exit(x.message)
 
+def stopServer(processName):
+	GEMFIRE = clusterDef.datanodeProperty(processName,'gemfire')
+	os.environ['GEMFIRE'] = GEMFIRE
+	os.environ['JAVA_HOME'] = clusterDef.datanodeProperty(processName,'java-home')
+	
+	if not serverIsRunning(processName):
+		print('{0} is not running'.format(processName))
+		return
+	try:	
+		subprocess.check_call([os.path.join(GEMFIRE,'bin','gfsh')
+			, "stop", "server"
+			,"--dir=" + datanodeDir(processName)])
+	except subprocess.CalledProcessError as x:
+		sys.exit(x.message)
+
+
 def statusLocator(processName):
 	GEMFIRE = clusterDef.locatorProperty(processName,'gemfire')
 	os.environ['GEMFIRE'] = GEMFIRE
@@ -93,6 +123,20 @@ def statusLocator(processName):
 		
 	except subprocess.CalledProcessError as x:
 		sys.exit(x.output)
+
+def statusServer(processName):
+	GEMFIRE = clusterDef.datanodeProperty(processName,'gemfire')
+	os.environ['GEMFIRE'] = GEMFIRE
+	os.environ['JAVA_HOME'] = clusterDef.datanodeProperty(processName,'java-home')
+	
+	try:
+		subprocess.check_call([os.path.join(GEMFIRE,'bin','gfsh')
+			, "status", "server"
+			,"--dir=" + datanodeDir(processName)])
+		
+	except subprocess.CalledProcessError as x:
+		sys.exit(x.output)
+
 		
 def startLocator(processName):
 	GEMFIRE = clusterDef.locatorProperty(processName,'gemfire')
@@ -114,6 +158,34 @@ def startLocator(processName):
 		,"--name={0}".format(processName)]
 	
 	cmdLine[len(cmdLine):] = clusterDef.gfshArgs('locator',processName)
+	
+	try:
+		subprocess.check_call(cmdLine)
+	except subprocess.CalledProcessError as x:
+		sys.exit(x.message)
+
+
+def startServer(processName):
+	GEMFIRE = clusterDef.datanodeProperty(processName,'gemfire')
+	os.environ['GEMFIRE'] = GEMFIRE
+	os.environ['JAVA_HOME'] = clusterDef.datanodeProperty(processName,'java-home')
+	
+	ensureDir(clusterDef.datanodeProperty(processName, 'cluster-home'))
+	ensureDir(datanodeDir(processName))
+	
+	if serverIsRunning(processName):
+		print('{0} is already running'.format(processName))
+		return
+	
+	cmdLine = [os.path.join(GEMFIRE,'bin','gfsh')
+		, "start", "server"
+		,"--dir=" + datanodeDir(processName)
+		,"--name={0}".format(processName)
+		,"--server-bind-address={0}".format(clusterDef.datanodeProperty(processName,'server-bind-address'))
+		,"--server-port={0}".format(clusterDef.datanodeProperty(processName,'server-port'))
+		]
+	
+	cmdLine[len(cmdLine):] = clusterDef.gfshArgs('datanode',processName)
 	
 	try:
 		subprocess.check_call(cmdLine)
@@ -200,6 +272,18 @@ if __name__ == '__main__':
 			statusLocator(obj)
 		else:
 			sys.exit(cmd + ' is an unkown operation for locators')
+			
+	elif clusterDef.isDatanode(obj):
+		if cmd == 'start':
+			startServer(obj)
+		elif cmd == 'stop':
+			stopServer(obj)
+		elif cmd == 'status':
+			statusServer(obj)
+		else:
+			sys.exit(cmd + ' is an unkown operation for datanodes')
+		
+		
 	else:
 		sys.exit(obj + ' is not defined for this host or is not a known process type')		
 	
