@@ -52,7 +52,8 @@ def serverIsRunning(processName):
 		port = clusterDef.locatorProperty(processName, 'server-port')
 		bindAddress = clusterDef.translateBindAddress(clusterDef.datanodeProperty(processName, 'server-bind-address'))
 		
-		sock = socket.create_connection(bindAddress, port)
+		#leave the double parens in the line below!
+		sock = socket.create_connection((bindAddress, port))
 		sock.close()
 		
 		return True
@@ -69,7 +70,8 @@ def locatorIsRunning(processName):
 	port = clusterDef.locatorProperty(processName, 'port')
 	bindAddress = clusterDef.translateBindAddress(clusterDef.locatorProperty(processName, 'bind-address'))
 	try:
-		sock = socket.create_connection(bindAddress, port)
+		#leave the double parens in the line below!
+		sock = socket.create_connection( (bindAddress, port))
 		sock.close()
 		return True
 	except Exception as x:
@@ -78,6 +80,7 @@ def locatorIsRunning(processName):
 		
 	# now check the pid file
 	pidfile = os.path.join(clusterDef.locatorProperty(processName, 'cluster-home'), processName, LOCATOR_PID_FILE)
+	
 	return pidIsAlive(pidfile)	
 		
 def stopLocator(processName):
@@ -164,8 +167,21 @@ def startLocator(processName):
 	except subprocess.CalledProcessError as x:
 		sys.exit(x.message)
 
+def startServerCommandLine(processName):
+	cmdLine = [os.path.join(GEMFIRE,'bin','gfsh')
+		, "start", "server"
+		,"--dir=" + datanodeDir(processName)
+		,"--name={0}".format(processName)
+		,"--server-bind-address={0}".format(clusterDef.datanodeProperty(processName,'server-bind-address'))
+		,"--server-port={0}".format(clusterDef.datanodeProperty(processName,'server-port'))
+		]
+	
+	cmdLine[len(cmdLine):] = clusterDef.gfshArgs('datanode',processName)
+	
+	return cmdLine
 
-def startServer(processName):
+# returns a Popen object
+def launchServerProcess(processName):
 	GEMFIRE = clusterDef.datanodeProperty(processName,'gemfire')
 	os.environ['GEMFIRE'] = GEMFIRE
 	os.environ['JAVA_HOME'] = clusterDef.datanodeProperty(processName,'java-home')
@@ -177,54 +193,43 @@ def startServer(processName):
 		print('{0} is already running'.format(processName))
 		return
 	
-	cmdLine = [os.path.join(GEMFIRE,'bin','gfsh')
-		, "start", "server"
-		,"--dir=" + datanodeDir(processName)
-		,"--name={0}".format(processName)
-		,"--server-bind-address={0}".format(clusterDef.datanodeProperty(processName,'server-bind-address'))
-		,"--server-port={0}".format(clusterDef.datanodeProperty(processName,'server-port'))
-		]
-	
-	cmdLine[len(cmdLine):] = clusterDef.gfshArgs('datanode',processName)
+	cmdLine = startServerCommandLine(processName)
 	
 	try:
-		subprocess.check_call(cmdLine)
+		proc = subprocess.Popen(cmdLine)
 	except subprocess.CalledProcessError as x:
 		sys.exit(x.message)
+		
+	return proc
+
+
+def startServer(processName):
+	proc = launchServerProcess(processName)
+	
+	if proc.wait() != 0:
+		sys.exit("cache server process failed to start - see the logs in {0}".format(datanodeDir(processName)))
 
 	
-def startCluster(cnum, nodecount):
-	ensureDirectories(cnum, nodecount)
-	startLocator(cnum)
-	processList = []
-	dirList = []
-	for i in range(1,nodecount + 1):
-		if not serverIsRunning(cnum,i):
-			proc = subprocess.Popen([GEMFIRE + "/bin/gfsh"
-					, "start", "server"
-					,"--dir=" + serverDir(cnum, i)
-					,"--server-port={0}".format(serverport(cnum,i))
-					,"--locators=localhost[{0}]".format(locatorport(cnum))
-					,"--classpath={0}".format(SERVER_CLASSPATH)
- 					,"--cache-xml-file={0}".format(CACHE_XML_FILE)
-					,"--name=server_{0}".format(i) 
-					,"--mcast-port=0"
-					,"--J=-Dgemfire.distributed-system-id={0}".format(cnum)
-					,"--J=-Dgemfire.remote-locators={0}".format(WAN_CONFIG[cnum].REMOTE_LOCATORS)
-					,"--J=-DREMOTE_DISTRIBUTED_SYSTEM_ID={0}".format(WAN_CONFIG[cnum].REMOTE_DISTRIBUTED_SYSTEM_ID)
-					,"--J=-DGATEWAY_RECEIVER_START_PORT={0}".format(gwayreceiverstartport(cnum))
-					,"--J=-DGATEWAY_RECEIVER_END_PORT={0}".format(gwayreceiverendport(cnum))
-					])
-
-			processList.append(proc)
-			dirList.append(serverDir(cnum, i))
+def startCluster():
+	
+	# probably is only going to be one
+	for locator in clusterDef.locatorsOnThisHost():
+		startLocator(locator)
 		
-	for j in range(0, len(processList)):
-		if processList[j].wait() != 0:
-			raise Exception("cache server process failed to start - see the logs in {0}".format(dirList[j]))
+	procList = []
+	for dnode in clusterDef.datanodesOnThisHost():
+		procList.append(launchServerProcess(dnode))
+
+	failCount = 0
+	for proc in procList:
+		if proc.wait() != 0:
+			failCount += 1
+			
+	if failCount > 0:
+		print('at least one server failed to start. Please check the logs for more detail')
 			
 def stopCluster(cnum):
-	if not locatorIsRunning(cnum):
+	if not locatorIsRunning():
 		return
 		
 	rc = subprocess.call([GEMFIRE + "/bin/gfsh"
@@ -242,6 +247,8 @@ def printUsage():
 	print('   cluster.py <path-to-cluster-def> stop <process-name>')
 	print('   cluster.py <path-to-cluster-def> status <process-name>')
 	print()
+	print('   cluster.py <path-to-cluster-def> start')
+	print('   cluster.py <path-to-cluster-def> stop')
 	print('Notes:')
 	print('* all commands are idempotent')
 	
@@ -257,35 +264,43 @@ if __name__ == '__main__':
 	with open(clusterDefFile,'r') as f:
 		clusterDef = clusterdef.ClusterDef(json.load(f))
 		
-	if len(sys.argv) < 4:
-		sys.exit('invalid input, please provide a command and an object')
+	if len(sys.argv) < 3:
+		sys.exit('invalid input, please provide a command')
 		
 	cmd = sys.argv[2]
-	obj = sys.argv[3]
 	
-	if clusterDef.isLocator(obj):
+	if len(sys.argv) == 3:
 		if cmd == 'start':
-			startLocator(obj)
+			startCluster()
 		elif cmd == 'stop':
-			stopLocator(obj)
-		elif cmd == 'status':
-			statusLocator(obj)
+			stopCluster()
 		else:
-			sys.exit(cmd + ' is an unkown operation for locators')
-			
-	elif clusterDef.isDatanode(obj):
-		if cmd == 'start':
-			startServer(obj)
-		elif cmd == 'stop':
-			stopServer(obj)
-		elif cmd == 'status':
-			statusServer(obj)
-		else:
-			sys.exit(cmd + ' is an unkown operation for datanodes')
-		
-		
+			sys.exit('unknown command: ' + cmd)
 	else:
-		sys.exit(obj + ' is not defined for this host or is not a known process type')		
+		obj = sys.argv[3]
+		
+		if clusterDef.isLocator(obj):
+			if cmd == 'start':
+				startLocator(obj)
+			elif cmd == 'stop':
+				stopLocator(obj)
+			elif cmd == 'status':
+				statusLocator(obj)
+			else:
+				sys.exit(cmd + ' is an unkown operation for locators')
+				
+		elif clusterDef.isDatanode(obj):
+			if cmd == 'start':
+				startServer(obj)
+			elif cmd == 'stop':
+				stopServer(obj)
+			elif cmd == 'status':
+				statusServer(obj)
+			else:
+				sys.exit(cmd + ' is an unkown operation for datanodes')		
+			
+		else:
+			sys.exit(obj + ' is not defined for this host or is not a known process type')		
 	
 
 		

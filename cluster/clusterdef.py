@@ -121,8 +121,27 @@ class ClusterDef:
                 
         return result
                             
+    def processesOnThisHost(self, processType):
+        if self.thisHost not in self.clusterDef['hosts']:
+            raise Exception('this host ({0}) not found in cluster definition'.format(self.thisHost))
+        
+        result = []
+        for processName in self.clusterDef['hosts'][self.thisHost]['processes'].keys():
+            process = self.clusterDef['hosts'][self.thisHost]['processes'][processName]
+            if process['type'] == processType:
+                result.append(processName)
+            
+        return result
 
 # public interface
+
+    def locatorsOnThisHost(self):
+        return self.processesOnThisHost('locator')
+
+
+    def datanodesOnThisHost(self):
+        return self.processesOnThisHost('datanode')
+
 
     def isLocator(self, processName):
         return self.isProcessOnThisHost(processName, 'locator')
