@@ -26,11 +26,13 @@ public class CheckRedundancy {
 	
 	private static String jmxManagerHost = null;
 	private static int jmxManagerPort = 0;
+	private static String jmxManagers = null;
 	private static String userName = null;
 	private static String password = null;
 	private static boolean verbose = false;
 	private static int wait = 0;
 	
+	private static String JMX_MANAGERS_PREFIX="--jmx-managers=";
 	private static String JMX_MANAGER_HOST_PREFIX="--jmx-manager-host=";
 	private static String JMX_MANAGER_PORT_PREFIX="--jmx-manager-port=";
 	private static String JMX_USERNAME_PREFIX="--jmx-username=";
@@ -48,14 +50,12 @@ public class CheckRedundancy {
 			regionBeans = new HashMap<ObjectName, DistributedRegionMXBean>(200);
 			
 			parseArgs(args);
-						
-			JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + jmxManagerHost + ":" + jmxManagerPort + "/jmxrmi");
-			HashMap<String, Serializable> env = null;
-			if (userName != null){
-				env = new HashMap<String,Serializable>();
-				env.put(JMXConnector.CREDENTIALS, new String []{userName, password});
-			}
-			jmxc = JMXConnectorFactory.connect(url, env);	
+			
+			if (jmxManagers == null)
+				jmxc = singleTargetConnect(jmxManagerHost, jmxManagerPort);
+			else
+				jmxc = multipleTargetConnect();
+			
 			MBeanServerConnection mbsc= jmxc.getMBeanServerConnection();
 			ObjectName dsOname = new ObjectName("GemFire:service=System,type=Distributed");
 			DistributedSystemMXBean distributedSystemBean  = JMX.newMXBeanProxy(mbsc, dsOname, DistributedSystemMXBean.class);
@@ -198,7 +198,7 @@ public class CheckRedundancy {
 	}
 	
 	private static void parseArgs(String []args){
-		if (args.length < 2) {
+		if (args.length < 1) {
 			printUsage();
 			System.exit(1);
 		}
@@ -214,6 +214,8 @@ public class CheckRedundancy {
 					System.err.println("--jmx-manager-port value must be an integer: " + s);
 					System.exit(1);
 				}
+			} else if (arg.startsWith(JMX_MANAGERS_PREFIX)){
+				jmxManagers = arg.substring(JMX_MANAGERS_PREFIX.length());
 			} else if (arg.startsWith(JMX_USERNAME_PREFIX)){
 				userName = arg.substring(JMX_USERNAME_PREFIX.length());
 			} else if (arg.startsWith(JMX_PASSWORD_PREFIX)){
@@ -234,13 +236,13 @@ public class CheckRedundancy {
 			}
 		}
 		
-		if (jmxManagerHost == null){
-			System.err.println("--jmx-manager-host is required");
+		if (jmxManagerHost == null && jmxManagers == null){
+			System.err.println("--jmx-manager-host is required if --jmx-managers is not given");
 			System.exit(1);
 		}
 		
-		if (jmxManagerPort == 0){
-			System.err.println("--jmx-manager-port is required");
+		if (jmxManagerPort == 0  && jmxManagers == null){
+			System.err.println("--jmx-manager-port is required if --jmx-managers is not given");
 			System.exit(1);
 		}
 		
@@ -253,10 +255,53 @@ public class CheckRedundancy {
 		
 	}
 	
+	private static JMXConnector singleTargetConnect(String host, int port) throws  IOException {
+		JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi");
+		HashMap<String, Serializable> env = null;
+		if (userName != null){
+			env = new HashMap<String,Serializable>();
+			env.put(JMXConnector.CREDENTIALS, new String []{userName, password});
+		}
+		JMXConnector jmxc = JMXConnectorFactory.connect(url, env);	
+		return jmxc;
+	}
+	
+	private static JMXConnector multipleTargetConnect() throws IOException {
+		JMXConnector jmxc = null;
+		String []targets = jmxManagers.split(",");
+		for (String target: targets){
+			int i = target.indexOf(':');
+			if (i == -1 || i == (target.length() - 1))
+				throw new RuntimeException("invalid format for --jmx-managers argument - must be a comma separated list of host:port - argument given was : \"" + jmxManagers + "\"");
+			
+			String host = target.substring(0,i);
+			int port = 0;
+			try {
+				port = Integer.parseInt(target.substring(i + 1));
+			} catch (NumberFormatException x){
+				throw new RuntimeException("invalid format for --jmx-managers argument - port argument must be a number - argument given was : \"" + jmxManagers + "\"");
+			}
+			
+			try {
+				jmxc = singleTargetConnect(host, port);
+				break;
+			} catch (IOException iox){
+				System.out.println("warning: could not connect to jmx manager at " + host + ":" + port);
+			}
+		}
+		
+		if (jmxc == null)
+			throw new RuntimeException("could not connect to any jmx manager in the list: " + jmxManagers);
+		
+		return jmxc;
+	}
+	
 	private static void printUsage(){
 		System.err.println("usage: checkredundancy --jmx-manager-host=abc --jmx-manager-port=123 --jmx-username=fred --jmx-password=pass ");
+		System.err.println("alternative usage: checkredundancy --jmx-managers=host1:port1,host2:port2 --jmx-username=fred --jmx-password=pass ");
 		System.err.println("\t--jmx-manager-host and --jmx-manager-port must point to a GemFire jmx manager (usually the locator)");
 		System.err.println("\t\tif you are not sure of the port number try 1099");		
+		System.err.println("\t--jmx-managers specifies a comma separated list of jmx managers using host:port notation");
 		System.err.println("\t--jmxusername and --jmx-manager-password are optional but if either is present the other must also be provided");
 		System.err.println();
 		System.err.println("\tcheckredundancy will return with a 0 exit code if all partition regions have redundancy");
