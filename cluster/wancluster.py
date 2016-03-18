@@ -14,14 +14,14 @@ CLUSTER_HOME=os.path.dirname(sys.argv[0])
 CACHE_XML_FILE=os.path.join(CLUSTER_HOME,"config","cache.xml")
 SERVER_CLASSPATH=os.path.join(CLUSTER_HOME,"..","target","*")
 
-def locatorport(cnum):
-	return 10000 * cnum			
+def locatorport(cnum, snum):
+	return (10000 * cnum) + snum			
 
 def serverport(cnum, snum):
 	return (10000 * cnum) + (100 * snum)
 	
-def jmxmanagerport(cnum):
-	return (10000 * cnum) + 1099
+def jmxmanagerport(cnum, snum):
+	return (10000 * cnum) +  (1000 * snum)  + 99
 	
 def gwayreceiverstartport(cnum):
 	return (10000 * cnum) + 2000
@@ -29,19 +29,9 @@ def gwayreceiverstartport(cnum):
 def gwayreceiverendport(cnum):
 		return (10000 * cnum) + 2999
 
-def httpport(cnum):
-		return (10000 * cnum) + 7070
+def httpport(cnum, snum):
+		return (10000 * cnum) + (1000 * snum) + 70
 
-
-class WanConfig:
-	def __init__(self, rl, rdsid):
-		self.REMOTE_LOCATORS=rl
-		self.REMOTE_DISTRIBUTED_SYSTEM_ID=rdsid
-
-
-WAN_CONFIG=[None, 
-	WanConfig("localhost[{0}]".format(locatorport(2)),"2"),
-	WanConfig("localhost[{0}]".format(locatorport(1)),"1")]
 
 
 LOCATOR_PID_FILE="cf.gf.locator.pid"
@@ -50,8 +40,8 @@ SERVER_PID_FILE="cf.gf.server.pid"
 def clusterDir(cnum):
 	return  CLUSTER_HOME + "/{0}".format(cnum)
 	
-def locatorDir(cnum):
-	return clusterDir(cnum) + "/locator"
+def locatorDir(cnum, snum):
+	return clusterDir(cnum) + "/locator_{0}".format(snum) 
 	
 def serverDir(cnum, snum):
 	return clusterDir(cnum) + "/server_{0}".format(snum)
@@ -64,7 +54,8 @@ def ensureDir(dname):
 def ensureDirectories(cnum, nodecount):
 	ensureDir(CLUSTER_HOME)
 	ensureDir(clusterDir(cnum))
-	ensureDir(locatorDir(cnum))
+	ensureDir(locatorDir(cnum, 1))
+	ensureDir(locatorDir(cnum, 2))
 	if nodecount > 0:
 		for i in range(1,nodecount + 1):
 			ensureDir(serverDir(cnum,i))
@@ -97,9 +88,9 @@ def serverIsRunning(cnum, snum):
 	pidfile = serverDir(cnum,snum) + "/SERVER_PID_FILE"
 	return pidIsAlive(pidfile)	
 	
-def locatorIsRunning(cnum):
+def locatorIsRunning(cnum, snum):
 	try:
-		sock = socket.create_connection(("localhost", locatorport(cnum)))
+		sock = socket.create_connection(("localhost", locatorport(cnum,snum)))
 		sock.close()
 		return True
 	except Exception as x:
@@ -107,40 +98,40 @@ def locatorIsRunning(cnum):
 		# ok - probably not running
 		
 	# now check the pid file
-	pidfile = locatorDir(cnum) + "/LOCATOR_PID_FILE"
+	pidfile = locatorDir(cnum, snum) + "/LOCATOR_PID_FILE"
 	return pidIsAlive(pidfile)	
 		
-def stopLocator(cnum):
-	if not locatorIsRunning(cnum):
+def stopLocator(cnum, snum):
+	if not locatorIsRunning(cnum,snum):
 		return
 		
 	subprocess.check_call([GEMFIRE + "/bin/gfsh"
 		, "stop", "locator"
-		,"--dir=" + locatorDir(cnum)])
+		,"--dir=" + locatorDir(cnum, snum)])
 		
-def startLocator(cnum):
+def startLocator(cnum, snum):
 	ensureDirectories(cnum, 0)
 
-	if locatorIsRunning(cnum):
+	if locatorIsRunning(cnum, snum):
 		return
 		
 	subprocess.check_call([GEMFIRE + "/bin/gfsh"
 		, "start", "locator"
-		,"--dir=" + locatorDir(cnum)
-		,"--port={0}".format(locatorport(cnum))
-		,"--name=locator" 
+		,"--dir=" + locatorDir(cnum, snum)
+		,"--port={0}".format(locatorport(cnum, snum))
+		,"--name=locator_{0}".format(snum)
+		,"--locators=localhost[{0}],localhost[{1}]".format(locatorport(cnum,1), locatorport(cnum, 2))
 		,"--mcast-port=0"
 		,"--J=-Dgemfire.distributed-system-id={0}".format(cnum)
-		,"--J=-Dgemfire.remote-locators={0}".format(WAN_CONFIG[cnum].REMOTE_LOCATORS)
-		,"--J=-DREMOTE_DISTRIBUTED_SYSTEM_ID={0}".format(WAN_CONFIG[cnum].REMOTE_DISTRIBUTED_SYSTEM_ID)
-		,"--J=-Dgemfire.jmx-manager-port={0}".format(jmxmanagerport(cnum))
-		,"--J=-Dgemfire.http-service-port={0}".format(httpport(cnum))
+		,"--J=-Dgemfire.jmx-manager-port={0}".format(jmxmanagerport(cnum, snum))
+		,"--J=-Dgemfire.http-service-port={0}".format(httpport(cnum, snum))
 		])
 
 	
 def startCluster(cnum, nodecount):
 	ensureDirectories(cnum, nodecount)
-	startLocator(cnum)
+	startLocator(cnum,1)
+	startLocator(cnum,2)
 	processList = []
 	dirList = []
 	for i in range(1,nodecount + 1):
@@ -149,16 +140,12 @@ def startCluster(cnum, nodecount):
 					, "start", "server"
 					,"--dir=" + serverDir(cnum, i)
 					,"--server-port={0}".format(serverport(cnum,i))
-					,"--locators=localhost[{0}]".format(locatorport(cnum))
+					,"--locators=localhost[{0}],localhost[{1}]".format(locatorport(cnum,1), locatorport(cnum, 2))
 					,"--classpath={0}".format(SERVER_CLASSPATH)
  					,"--cache-xml-file={0}".format(CACHE_XML_FILE)
 					,"--name=server_{0}".format(i) 
 					,"--mcast-port=0"
 					,"--J=-Dgemfire.distributed-system-id={0}".format(cnum)
-					,"--J=-Dgemfire.remote-locators={0}".format(WAN_CONFIG[cnum].REMOTE_LOCATORS)
-					,"--J=-DREMOTE_DISTRIBUTED_SYSTEM_ID={0}".format(WAN_CONFIG[cnum].REMOTE_DISTRIBUTED_SYSTEM_ID)
-					,"--J=-DGATEWAY_RECEIVER_START_PORT={0}".format(gwayreceiverstartport(cnum))
-					,"--J=-DGATEWAY_RECEIVER_END_PORT={0}".format(gwayreceiverendport(cnum))
 					])
 
 			processList.append(proc)
@@ -169,17 +156,18 @@ def startCluster(cnum, nodecount):
 			raise Exception("cache server process failed to start - see the logs in {0}".format(dirList[j]))
 			
 def stopCluster(cnum):
-	if not locatorIsRunning(cnum):
+	if not locatorIsRunning(cnum,1) and not locatorIsRunning(cnum,2):
 		return
 		
 	rc = subprocess.call([GEMFIRE + "/bin/gfsh"
-		, "-e", "connect --locator=localhost[{0}]".format(locatorport(cnum))
+		, "-e", "connect --locator=localhost[{0}]".format(locatorport(cnum,1))
 		,"-e", "shutdown"])
 
 	# it appears that the return code in this case is not correct
 	# will just hope for the best right now	
 	
-	stopLocator(cnum)
+	stopLocator(cnum,2)
+	stopLocator(cnum,1)
 	
 
 			
