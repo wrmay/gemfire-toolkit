@@ -9,7 +9,7 @@
 	<name>gemfire-toolkit</name>
 
 	<scm>
-	  <connection>${gemfire.toolkit.scm.url}</connection>
+	  <connection>${gemfire-toolkit.scm.url}</connection>
   	  <tag>HEAD</tag>
   </scm>
 
