@@ -3,14 +3,14 @@
 
 	<groupId>io.pivotal.gemfire.extensions</groupId>
 	<artifactId>gemfire-toolkit</artifactId>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.0</version>
 	<packaging>jar</packaging>
 
 	<name>gemfire-toolkit</name>
 
 	<scm>
 	  <connection>${gemfire-toolkit.scm.url}</connection>
-  	  <tag>HEAD</tag>
+  	  <tag>gemfire-toolkit-1.0</tag>
   </scm>
 
 	<properties>
