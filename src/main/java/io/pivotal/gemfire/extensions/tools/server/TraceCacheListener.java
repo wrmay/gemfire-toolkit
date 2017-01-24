@@ -1,14 +1,14 @@
 package io.pivotal.gemfire.extensions.tools.server;
 
-import com.gemstone.gemfire.LogWriter;
-import com.gemstone.gemfire.cache.CacheEvent;
-import com.gemstone.gemfire.cache.CacheFactory;
-import com.gemstone.gemfire.cache.CacheListener;
-import com.gemstone.gemfire.cache.EntryEvent;
-import com.gemstone.gemfire.cache.RegionEvent;
-import com.gemstone.gemfire.distributed.DistributedMember;
-import com.gemstone.gemfire.pdx.JSONFormatter;
-import com.gemstone.gemfire.pdx.PdxInstance;
+import org.apache.geode.LogWriter;
+import org.apache.geode.cache.CacheEvent;
+import org.apache.geode.cache.CacheFactory;
+import org.apache.geode.cache.CacheListener;
+import org.apache.geode.cache.EntryEvent;
+import org.apache.geode.cache.RegionEvent;
+import org.apache.geode.distributed.DistributedMember;
+import org.apache.geode.pdx.JSONFormatter;
+import org.apache.geode.pdx.PdxInstance;
 
 
 public class TraceCacheListener implements CacheListener<Object, Object> {
