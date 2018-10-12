@@ -3,7 +3,8 @@
 A collection of useful utilities for administering GemFire
 
 
-##gemtouch##
+## gemtouch
+
 The "gemtouch" tool can be used to facilitate recovery over WAN
 
 This utility connects to the JMX manager to determine the list of all regions in a distributed
@@ -15,12 +16,13 @@ If an entry happens to be updated or removed between the time that this utility 
 the time that it attempts a put, the put will be aborted to avoid accidentally undoing an update 
 from an external source.  In other words, the utility is safe to run on an active cluster.
 
-##checkred##
+## checkred
+
 The "checkred" tool can report regions that are "at risk" because they are not fully redundant. 
 The tool only reports on the redundancy status of partitioned regions.  Replicate regions are 
 redundant so long as more than one member of the distributed system is running.
 
-##trace / untrace##
+## trace / untrace
 
 you must deploy the gemtools jar using the "gfsh deploy" command,
 then ...
@@ -38,7 +40,8 @@ untrace.py locatorhost[port] /SomeRegion
 ```
 
 
-# Installation#
+# Installation 
+
 Unpack the tarball: gemtools-VERSION-runtime.tar.gz
 
 This will create a directory, "gemtools" which contains everything needed to run the script (except a JVM)
@@ -50,7 +53,7 @@ Set the JAVA_HOME environment variable to point to a java installation.
 The script will execute the JVM at $JAVA_HOME/bin/java
 
 
-#gemtouch usage#
+# gemtouch usage
 
 gemtouch.py --jmx-manager-host=abc --jmx-manager-port=123 --jmx-username=fred --jmx-password=pass --rate-per-thread=100
 
@@ -59,7 +62,8 @@ If you are not sure of the port number try 1099
 * --jmxusername and --jmx-manager-password are optional but if either is present then both must be
 * --rate-per-second is optional - acts a a throttle if present
 
-####note on compatibility with the dynamic region management project####
+####note on compatibility with the dynamic region management project
+
 * if the metadata region (__regionAttributesMetadata by default) is  present it will be touched first
 * the name of the metadata region can be set with the --metadata-region-name option
 * after touching the metadata region the program will pause for 20s to allow for
@@ -77,13 +81,13 @@ checkred.py --jmx-manager-host=abc --jmx-manager-port=123 --jmx-username=fred --
 * checkred will return with a 0 exit code if all partition regions have redundancy
 * checkred will return with a 1 exit code if any partition regions do not have redundancy
 
-#####additional options#####
+##### additional options
 By default, checkredundancy will report only partition regions that do not have redundancy
 * --verbose will cause checkredundancy to report redundancy of all regions
 * --wait=20 will cause checkredundancy to wait up to 20s for redundancy to be established
 
 
-#Known Issues
+# Known Issues
 1. Server groups not supported.
 2. Has not been tested with subregions
 
