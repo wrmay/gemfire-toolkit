@@ -15,12 +15,12 @@ import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
-import org.apache.geode.cache.Region;
-import org.apache.geode.cache.client.ClientCacheFactory;
-import org.apache.geode.cache.client.ClientRegionShortcut;
-import org.apache.geode.management.DistributedRegionMXBean;
-import org.apache.geode.management.DistributedSystemMXBean;
-import org.apache.geode.management.MemberMXBean;
+import com.gemstone.gemfire.cache.Region;
+import com.gemstone.gemfire.cache.client.ClientCacheFactory;
+import com.gemstone.gemfire.cache.client.ClientRegionShortcut;
+import com.gemstone.gemfire.management.DistributedRegionMXBean;
+import com.gemstone.gemfire.management.DistributedSystemMXBean;
+import com.gemstone.gemfire.management.MemberMXBean;
 
 public class ListPIDs {
 	public static String NAME = "Touch";

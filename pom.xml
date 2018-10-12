@@ -1,17 +1,18 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>io.pivotal.gemfire.extensions</groupId>
 	<artifactId>gemfire-toolkit</artifactId>
-	<version>2.2-SNAPSHOT</version>
+	<version>82.1.0</version>
 	<packaging>jar</packaging>
 
 	<name>gemfire-toolkit</name>
 
 	<scm>
-	  <connection>${gemfire-toolkit.scm.url}</connection>
-  	  <tag>HEAD</tag>
-  </scm>
+		<connection>${gemfire-toolkit.scm.url}</connection>
+		<tag>HEAD</tag>
+	</scm>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,11 +20,11 @@
 
 
 	<repositories>
-		 <repository>
-		       <id>gemfire-release-repo</id>
-		       <name>Pivotal GemFire Release Repository</name>
-		       <url>https://commercial-repo.pivotal.io/data3/gemfire-release-repo/gemfire</url>
-		   </repository>
+		<repository>
+			<id>gemfire-repository</id>
+			<name>Gemfire Repository</name>
+			<url>http://dist.gemstone.com/maven/release</url>
+		</repository>
 	</repositories>
 
 	<build>
@@ -66,16 +67,10 @@
 
 
 	<dependencies>
-		   <dependency>
-		      <groupId>io.pivotal.gemfire</groupId>
-		      <artifactId>geode-core</artifactId>
-		      <version>9.5.1</version>
-		   </dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.12</version>
-			<scope>test</scope>
+			<groupId>com.gemstone.gemfire</groupId>
+			<artifactId>gemfire</artifactId>
+			<version>8.2.1</version>
 		</dependency>
 	</dependencies>
 </project>

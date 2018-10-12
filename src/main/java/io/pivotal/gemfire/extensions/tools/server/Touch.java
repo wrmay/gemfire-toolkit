@@ -7,16 +7,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.geode.CopyHelper;
-import org.apache.geode.cache.CacheFactory;
-import org.apache.geode.cache.CacheTransactionManager;
-import org.apache.geode.cache.CommitConflictException;
-import org.apache.geode.cache.Region;
-import org.apache.geode.cache.execute.Function;
-import org.apache.geode.cache.execute.FunctionContext;
-import org.apache.geode.cache.execute.RegionFunctionContext;
-import org.apache.geode.cache.execute.ResultSender;
-import org.apache.geode.cache.partition.PartitionRegionHelper;
+import com.gemstone.gemfire.CopyHelper;
+import com.gemstone.gemfire.cache.CacheFactory;
+import com.gemstone.gemfire.cache.CacheTransactionManager;
+import com.gemstone.gemfire.cache.CommitConflictException;
+import com.gemstone.gemfire.cache.Region;
+import com.gemstone.gemfire.cache.execute.Function;
+import com.gemstone.gemfire.cache.execute.FunctionContext;
+import com.gemstone.gemfire.cache.execute.RegionFunctionContext;
+import com.gemstone.gemfire.cache.execute.ResultSender;
+import com.gemstone.gemfire.cache.partition.PartitionRegionHelper;
 
 /**
  * optionally takes a list of region names

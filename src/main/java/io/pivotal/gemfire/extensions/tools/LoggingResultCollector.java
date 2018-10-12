@@ -2,9 +2,9 @@ package io.pivotal.gemfire.extensions.tools;
 
 import java.util.concurrent.TimeUnit;
 
-import org.apache.geode.cache.execute.FunctionException;
-import org.apache.geode.cache.execute.ResultCollector;
-import org.apache.geode.distributed.DistributedMember;
+import com.gemstone.gemfire.cache.execute.FunctionException;
+import com.gemstone.gemfire.cache.execute.ResultCollector;
+import com.gemstone.gemfire.distributed.DistributedMember;
 
 public class LoggingResultCollector implements ResultCollector <String,String> {
 

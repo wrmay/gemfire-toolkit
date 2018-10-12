@@ -3,12 +3,12 @@ package io.pivotal.gemfire.extensions.tools;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.geode.cache.client.ClientCache;
-import org.apache.geode.cache.client.ClientCacheFactory;
-import org.apache.geode.cache.client.Pool;
-import org.apache.geode.cache.execute.Execution;
-import org.apache.geode.cache.execute.FunctionService;
-import org.apache.geode.cache.execute.ResultCollector;
+import com.gemstone.gemfire.cache.client.ClientCache;
+import com.gemstone.gemfire.cache.client.ClientCacheFactory;
+import com.gemstone.gemfire.cache.client.Pool;
+import com.gemstone.gemfire.cache.execute.Execution;
+import com.gemstone.gemfire.cache.execute.FunctionService;
+import com.gemstone.gemfire.cache.execute.ResultCollector;
 
 public class Untrace {
 	public static String NAME = "Untrace";

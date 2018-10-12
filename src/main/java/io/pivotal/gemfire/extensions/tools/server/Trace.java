@@ -1,12 +1,12 @@
 package io.pivotal.gemfire.extensions.tools.server;
 
 
-import org.apache.geode.cache.CacheFactory;
-import org.apache.geode.cache.CacheListener;
-import org.apache.geode.cache.Region;
-import org.apache.geode.cache.RegionAttributes;
-import org.apache.geode.cache.execute.Function;
-import org.apache.geode.cache.execute.FunctionContext;
+import com.gemstone.gemfire.cache.CacheFactory;
+import com.gemstone.gemfire.cache.CacheListener;
+import com.gemstone.gemfire.cache.Region;
+import com.gemstone.gemfire.cache.RegionAttributes;
+import com.gemstone.gemfire.cache.execute.Function;
+import com.gemstone.gemfire.cache.execute.FunctionContext;
 
 /**
  * optionally takes a list of region names
