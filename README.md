@@ -62,7 +62,7 @@ If you are not sure of the port number try 1099
 * --jmxusername and --jmx-manager-password are optional but if either is present then both must be
 * --rate-per-second is optional - acts a a throttle if present
 
-####note on compatibility with the dynamic region management project
+#### note on compatibility with the dynamic region management project
 
 * if the metadata region (__regionAttributesMetadata by default) is  present it will be touched first
 * the name of the metadata region can be set with the --metadata-region-name option
@@ -71,7 +71,7 @@ propagation the length of the wait (in seconds)  can be set using the --region-c
 
 
 
-#checkred usage
+# checkred usage
 
 
 checkred.py --jmx-manager-host=abc --jmx-manager-port=123 --jmx-username=fred --jmx-password=pass 
