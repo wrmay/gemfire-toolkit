@@ -1,5 +1,3 @@
-<h1> VMware has ended active development of this project, this repository will no longer be updated.</h1><br># Overview
-
 A collection of useful utilities for administering GemFire
 
 
@@ -89,8 +87,12 @@ By default, checkredundancy will report only partition regions that do not have 
 
 # Known Issues
 1. Server groups not supported.
-2. Has not been tested with subregions
 
+# Release Notes
+
+### 2.2 2 December, 2021
+- updated GemFire dependency to 9.10.5
+- updated Java source and target versions to 11
 
 
 
